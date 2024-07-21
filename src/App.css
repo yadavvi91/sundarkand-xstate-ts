@@ -70,3 +70,18 @@
 .time-display {
   font-size: 14px;
 }
+
+.lyrics-container {
+  height: 200px;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.lyric {
+  padding: 5px 0;
+}
+
+.active-lyric {
+  font-weight: bold;
+  color: #3f51b5;
+}

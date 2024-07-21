@@ -1,10 +1,17 @@
 import { createMachine, assign, ActorRefFrom, StateFrom } from "xstate";
 
+export interface Lyric {
+  time: number;
+  text: string;
+}
+
 export interface AudioPlayerContext {
   duration: number;
   currentTime: number;
   volume: number;
   isMuted: boolean;
+  lyrics: Lyric[];
+  currentLyricIndex: number;
 }
 
 export type AudioPlayerEvent =
@@ -14,18 +21,43 @@ export type AudioPlayerEvent =
   | { type: "TIME_UPDATE"; currentTime: number }
   | { type: "SEEK"; time: number }
   | { type: "VOLUME_CHANGE"; volume: number }
-  | { type: "TOGGLE_MUTE" };
+  | { type: "TOGGLE_MUTE" }
+  | { type: "SET_LYRICS"; lyrics: Lyric[] };
 
 const updateDuration = assign(({ event }) => {
   return { duration: event.type === "LOADED" ? event.duration : undefined };
 });
 
-const updateCurrentTime = assign(({ event }) => {
-  return { currentTime: event.type === "TIME_UPDATE" ? event.currentTime : undefined };
+const updateCurrentTime = assign(({ context, event }) => {
+  if (event.type !== "TIME_UPDATE") return {};
+  
+  const newCurrentTime = event.currentTime;
+  const newLyricIndex = context.lyrics.findIndex(
+    (lyric, index) =>
+      lyric.time <= newCurrentTime &&
+      (index === context.lyrics.length - 1 || context.lyrics[index + 1].time > newCurrentTime)
+  );
+
+  return {
+    currentTime: newCurrentTime,
+    currentLyricIndex: newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
+  };
 });
 
-const seekToTime = assign(({ event }) => {
-  return { currentTime: event.type === "SEEK" ? event.time : undefined };
+const seekToTime = assign(({ context, event }) => {
+  if (event.type !== "SEEK") return {};
+  
+  const newTime = event.time;
+  const newLyricIndex = context.lyrics.findIndex(
+    (lyric, index) =>
+      lyric.time <= newTime &&
+      (index === context.lyrics.length - 1 || context.lyrics[index + 1].time > newTime)
+  );
+
+  return {
+    currentTime: newTime,
+    currentLyricIndex: newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
+  };
 });
 
 const changeVolume = assign(({ event }) => {
@@ -34,6 +66,10 @@ const changeVolume = assign(({ event }) => {
 
 const toggleMute = assign(({ context }) => {
   return { isMuted: !context.isMuted };
+});
+
+const setLyrics = assign(({ event }) => {
+  return { lyrics: event.type === "SET_LYRICS" ? event.lyrics : undefined };
 });
 
 export const audioPlayerMachine = createMachine({
@@ -48,6 +84,8 @@ export const audioPlayerMachine = createMachine({
     currentTime: 0,
     volume: 1,
     isMuted: false,
+    lyrics: [],
+    currentLyricIndex: -1,
   },
   states: {
     loading: {
@@ -55,6 +93,9 @@ export const audioPlayerMachine = createMachine({
         LOADED: {
           target: "ready",
           actions: updateDuration,
+        },
+        SET_LYRICS: {
+          actions: setLyrics,
         },
       },
     },

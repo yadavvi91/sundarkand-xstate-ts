@@ -1,15 +1,17 @@
 import React, { useRef, useEffect } from "react";
 import { useMachine } from "@xstate/react";
-import { audioPlayerMachine } from "./audioPlayerMachine";
+import { audioPlayerMachine, Lyric } from "./audioPlayerMachine";
 import { Play, Pause, Volume, VolumeX } from "lucide-react";
 
 interface XStateAudioPlayerProps {
   audioSrc: string;
+  lyrics: Lyric[];
 }
 
-const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
+const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const [state, send] = useMachine(audioPlayerMachine);
 
   useEffect(() => {
@@ -27,11 +29,13 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("timeupdate", handleTimeUpdate);
 
+    send({ type: "SET_LYRICS", lyrics });
+
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [send]);
+  }, [send, lyrics]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -45,6 +49,16 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
 
     audio.volume = state.context.isMuted ? 0 : state.context.volume;
   }, [state]);
+
+  useEffect(() => {
+    const container = lyricsContainerRef.current;
+    if (!container) return;
+
+    const activelyric = container.querySelector(".active-lyric");
+    if (activelyric) {
+      activelyric.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [state.context.currentLyricIndex]);
 
   const togglePlayPause = () => {
     send({ type: state.matches("ready.playing") ? "PAUSE" : "PLAY" });
@@ -110,6 +124,16 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
           value={state.context.isMuted ? 0 : state.context.volume}
           onChange={handleVolumeChange}
         />
+      </div>
+      <div className="lyrics-container" ref={lyricsContainerRef}>
+        {state.context.lyrics.map((lyric, index) => (
+          <div
+            key={index}
+            className={`lyric ${index === state.context.currentLyricIndex ? 'active-lyric' : ''}`}
+          >
+            {lyric.text}
+          </div>
+        ))}
       </div>
     </div>
   );
