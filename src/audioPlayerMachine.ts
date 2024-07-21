@@ -12,61 +12,55 @@ export type AudioPlayerEvent =
   | { type: "TIME_UPDATE"; currentTime: number }
   | { type: "SEEK"; time: number };
 
-const updateDuration = assign<AudioPlayerContext, AudioPlayerEvent>({
-  duration: (_, event) => (event.type === "LOADED" ? event.duration : 0),
+const updateDuration = assign(({ event }) => {
+  if (event.type !== "LOADED") return {};
+  return { duration: event.duration };
 });
 
-const updateCurrentTime = assign<AudioPlayerContext, AudioPlayerEvent>({
-  currentTime: (_, event) => (event.type === "TIME_UPDATE" ? event.currentTime : 0),
+const updateCurrentTime = assign(({ event }) => {
+  if (event.type !== "TIME_UPDATE") return {};
+  return { currentTime: event.currentTime };
 });
 
-const seekToTime = assign<AudioPlayerContext, AudioPlayerEvent>({
-  currentTime: (_, event) => (event.type === "SEEK" ? event.time : 0),
+const seekToTime = assign(({ event }) => {
+  if (event.type !== "SEEK") return {};
+  return { currentTime: event.time };
 });
-  
-export const audioPlayerMachine = createMachine(
-  {
-    id: "audioPlayer",
-    initial: "loading",
-    context: {
-      duration: 0,
-      currentTime: 0,
-    },
-    states: {
-      loading: {
-        on: {
-          LOADED: {
-            target: "ready",
-            actions: "updateDuration",
-          },
+
+export const audioPlayerMachine = createMachine({
+  id: "audioPlayer",
+  initial: "loading",
+  context: {
+    duration: 0,
+    currentTime: 0,
+  },
+  states: {
+    loading: {
+      on: {
+        LOADED: {
+          target: "ready",
+          actions: updateDuration,
         },
       },
-      ready: {
-        initial: "paused",
-        states: {
-          playing: {
-            on: { PAUSE: "paused" },
-          },
-          paused: {
-            on: { PLAY: "playing" },
-          },
+    },
+    ready: {
+      initial: "paused",
+      states: {
+        playing: {
+          on: { PAUSE: "paused" },
         },
-        on: {
-          TIME_UPDATE: {
-            actions: "updateCurrentTime",
-          },
-          SEEK: {
-            actions: ["seekToTime", "updateCurrentTime"],
-          },
+        paused: {
+          on: { PLAY: "playing" },
+        },
+      },
+      on: {
+        TIME_UPDATE: {
+          actions: updateCurrentTime,
+        },
+        SEEK: {
+          actions: [seekToTime, updateCurrentTime],
         },
       },
     },
   },
-  {
-    actions: {
-      updateDuration,
-      updateCurrentTime,
-      seekToTime,
-    },
-  }
-);
+});
