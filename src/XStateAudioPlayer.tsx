@@ -32,14 +32,19 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
     };
   }, [send]);
 
-  const togglePlayPause = () => {
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (state.matches("ready.playing")) {
-      audioRef.current?.pause();
-      send({ type: "PAUSE" });
+      audio.play().catch((error) => console.error("Error playing audio:", error));
     } else {
-      audioRef.current?.play();
-      send({ type: "PLAY" });
+      audio.pause();
     }
+  }, [state]);
+
+  const togglePlayPause = () => {
+    send({ type: state.matches("ready.playing") ? "PAUSE" : "PLAY" });
   };
 
   const formatTime = (time: number) => {
@@ -52,16 +57,9 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
     <div>
       <audio ref={audioRef} src={audioSrc} />
       <button onClick={togglePlayPause}>
-        {state.matches("ready.playing") ? (
-          <Pause size={20} />
-        ) : (
-          <Play size={20} />
-        )}
+        {state.matches("ready.playing") ? <Pause size={20} /> : <Play size={20} />}
       </button>
-      <div>
-        {formatTime(state.context.currentTime)} /{" "}
-        {formatTime(state.context.duration)}
-      </div>
+      <div>{formatTime(state.context.currentTime)} / {formatTime(state.context.duration)}</div>
     </div>
   );
 };
