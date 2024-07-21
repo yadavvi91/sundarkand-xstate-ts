@@ -3,6 +3,8 @@ import { createMachine, assign, ActorRefFrom, StateFrom } from "xstate";
 export interface AudioPlayerContext {
   duration: number;
   currentTime: number;
+  volume: number;
+  isMuted: boolean;
 }
 
 export type AudioPlayerEvent =
@@ -10,20 +12,29 @@ export type AudioPlayerEvent =
   | { type: "PLAY" }
   | { type: "PAUSE" }
   | { type: "TIME_UPDATE"; currentTime: number }
-  | { type: "SEEK"; time: number };
+  | { type: "SEEK"; time: number }
+  | { type: "VOLUME_CHANGE"; volume: number }
+  | { type: "TOGGLE_MUTE" };
 
-const updateDuration = assign(({ context, event } ) => {
+const updateDuration = assign(({ event }) => {
   return { duration: event.type === "LOADED" ? event.duration : undefined };
 });
 
-const updateCurrentTime = assign(({ context, event } ) => {
-  return { currentTime: event.type === "TIME_UPDATE" ? event.currentTime : 0 }
+const updateCurrentTime = assign(({ event }) => {
+  return { currentTime: event.type === "TIME_UPDATE" ? event.currentTime : undefined };
 });
 
-const seekToTime = assign(({ context, event } ) => {
-  return { currentTime: event.type === "SEEK" ? event.time : 0 }
+const seekToTime = assign(({ event }) => {
+  return { currentTime: event.type === "SEEK" ? event.time : undefined };
 });
 
+const changeVolume = assign(({ event }) => {
+  return { volume: event.type === "VOLUME_CHANGE" ? event.volume : undefined };
+});
+
+const toggleMute = assign(({ context }) => {
+  return { isMuted: !context.isMuted };
+});
 
 export const audioPlayerMachine = createMachine({
   id: "audioPlayer",
@@ -35,13 +46,15 @@ export const audioPlayerMachine = createMachine({
   context: {
     duration: 0,
     currentTime: 0,
+    volume: 1,
+    isMuted: false,
   },
   states: {
     loading: {
       on: {
         LOADED: {
           target: "ready",
-          actions: updateDuration
+          actions: updateDuration,
         },
       },
     },
@@ -61,6 +74,12 @@ export const audioPlayerMachine = createMachine({
         },
         SEEK: {
           actions: [seekToTime, updateCurrentTime],
+        },
+        VOLUME_CHANGE: {
+          actions: changeVolume,
+        },
+        TOGGLE_MUTE: {
+          actions: toggleMute,
         },
       },
     },
