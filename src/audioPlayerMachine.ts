@@ -12,27 +12,17 @@ export type AudioPlayerEvent =
   | { type: "TIME_UPDATE"; currentTime: number }
   | { type: "SEEK"; time: number };
 
-const updateDuration = assign<AudioPlayerContext, AudioPlayerEvent>({
-  duration: (context) => (event.type === "LOADED" ? event.duration : 0),
+const updateDuration = assign(({ context, event } ) => {
+  return { duration: event.type === "LOADED" ? event.duration : undefined };
 });
 
-
-const updateCurrentTime = assign<AudioPlayerContext, AudioPlayerEvent>({
-  currentTime: (context) => (event.type === "TIME_UPDATE" ? event.currentTime : 0),
+const updateCurrentTime = assign(({ context, event } ) => {
+  return { currentTime: event.type === "TIME_UPDATE" ? event.currentTime : 0 }
 });
 
-const seekToTime = assign<AudioPlayerContext, AudioPlayerEvent>({
-  currentTime: (_, event) => (event.type === "SEEK" ? event.time : 0),
+const seekToTime = assign(({ context, event } ) => {
+  return { currentTime: event.type === "SEEK" ? event.time : 0 }
 });
-
-const updateDuration: AssignAction<AudioPlayerContext, AudioPlayerEvent> = assign(
-  ({ event }) => {
-    if (event.type === "LOADED") {
-      return { duration: event.duration };
-    }
-    return {};
-  }
-);
 
 
 export const audioPlayerMachine = createMachine({
@@ -51,11 +41,7 @@ export const audioPlayerMachine = createMachine({
       on: {
         LOADED: {
           target: "ready",
-          actions: assign(({ context, event }) => {
-            return {
-              duration: (event.type === "LOADED" ? event.duration : 0)
-            };
-          }),
+          actions: updateDuration
         },
       },
     },
