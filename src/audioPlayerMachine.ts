@@ -29,6 +29,10 @@ const seekToTime = assign(({ event }) => {
 
 export const audioPlayerMachine = createMachine({
   id: "audioPlayer",
+  types: {} as {
+    context: AudioPlayerContext;
+    events: AudioPlayerEvent;
+  },
   initial: "loading",
   context: {
     duration: 0,
