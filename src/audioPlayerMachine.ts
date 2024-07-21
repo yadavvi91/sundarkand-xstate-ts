@@ -1,4 +1,4 @@
-import { createMachine, assign } from "xstate";
+import { createMachine, assign, ActorRefFrom, StateFrom } from "xstate";
 
 export interface AudioPlayerContext {
   duration: number;
@@ -12,20 +12,28 @@ export type AudioPlayerEvent =
   | { type: "TIME_UPDATE"; currentTime: number }
   | { type: "SEEK"; time: number };
 
-const updateDuration = assign(({ event }) => {
-  if (event.type !== "LOADED") return {};
-  return { duration: event.duration };
+const updateDuration = assign<AudioPlayerContext, AudioPlayerEvent>({
+  duration: (context) => (event.type === "LOADED" ? event.duration : 0),
 });
 
-const updateCurrentTime = assign(({ event }) => {
-  if (event.type !== "TIME_UPDATE") return {};
-  return { currentTime: event.currentTime };
+
+const updateCurrentTime = assign<AudioPlayerContext, AudioPlayerEvent>({
+  currentTime: (context) => (event.type === "TIME_UPDATE" ? event.currentTime : 0),
 });
 
-const seekToTime = assign(({ event }) => {
-  if (event.type !== "SEEK") return {};
-  return { currentTime: event.time };
+const seekToTime = assign<AudioPlayerContext, AudioPlayerEvent>({
+  currentTime: (_, event) => (event.type === "SEEK" ? event.time : 0),
 });
+
+const updateDuration: AssignAction<AudioPlayerContext, AudioPlayerEvent> = assign(
+  ({ event }) => {
+    if (event.type === "LOADED") {
+      return { duration: event.duration };
+    }
+    return {};
+  }
+);
+
 
 export const audioPlayerMachine = createMachine({
   id: "audioPlayer",
@@ -43,7 +51,11 @@ export const audioPlayerMachine = createMachine({
       on: {
         LOADED: {
           target: "ready",
-          actions: updateDuration,
+          actions: assign(({ context, event }) => {
+            return {
+              duration: (event.type === "LOADED" ? event.duration : 0)
+            };
+          }),
         },
       },
     },
@@ -68,3 +80,7 @@ export const audioPlayerMachine = createMachine({
     },
   },
 });
+
+export type AudioPlayerMachine = typeof audioPlayerMachine;
+export type AudioPlayerActor = ActorRefFrom<AudioPlayerMachine>;
+export type AudioPlayerState = StateFrom<AudioPlayerMachine>;
