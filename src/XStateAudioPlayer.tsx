@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useMachine } from "@xstate/react";
-import { audioPlayerMachine } from "./audioPlayerMachine";
+import { audioPlayerMachine, AudioPlayerContext, AudioPlayerEvent } from "./audioPlayerMachine";
 import { Play, Pause } from "lucide-react";
 
 interface XStateAudioPlayerProps {
@@ -9,6 +9,7 @@ interface XStateAudioPlayerProps {
 
 const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
   const [state, send] = useMachine(audioPlayerMachine);
 
   useEffect(() => {
@@ -47,6 +48,18 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
     send({ type: state.matches("ready.playing") ? "PAUSE" : "PLAY" });
   };
 
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const progressBar = progressRef.current;
+    const audio = audioRef.current;
+    if (!progressBar || !audio) return;
+
+    const clickPosition = (e.clientX - progressBar.getBoundingClientRect().left) / progressBar.offsetWidth;
+    const newTime = clickPosition * state.context.duration;
+    
+    audio.currentTime = newTime;
+    send({ type: "SEEK", time: newTime });
+  };
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -54,12 +67,26 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc }) => {
   };
 
   return (
-    <div>
+    <div className="audio-player">
       <audio ref={audioRef} src={audioSrc} />
       <button onClick={togglePlayPause}>
         {state.matches("ready.playing") ? <Pause size={20} /> : <Play size={20} />}
       </button>
-      <div>{formatTime(state.context.currentTime)} / {formatTime(state.context.duration)}</div>
+      <div className="progress-container">
+        <div
+          ref={progressRef}
+          className="progress-bar"
+          onClick={handleProgressClick}
+        >
+          <div
+            className="progress"
+            style={{ width: `${(state.context.currentTime / state.context.duration) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+      <div className="time-display">
+        {formatTime(state.context.currentTime)} / {formatTime(state.context.duration)}
+      </div>
     </div>
   );
 };
