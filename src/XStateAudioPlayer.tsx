@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useMachine } from "@xstate/react";
-import { createBrowserInspector } from '@statelyai/inspect';
+import { createBrowserInspector } from "@statelyai/inspect";
 import { audioPlayerMachine, Lyric } from "./audioPlayerMachine";
 import { Play, Pause, Volume, VolumeX } from "lucide-react";
 
@@ -10,7 +10,10 @@ interface XStateAudioPlayerProps {
 }
 const { inspect } = createBrowserInspector();
 
-const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics }) => {
+const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({
+  audioSrc,
+  lyrics,
+}) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
@@ -44,7 +47,9 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics 
     if (!audio) return;
 
     if (state.matches("ready.playing")) {
-      audio.play().catch((error) => console.error("Error playing audio:", error));
+      audio
+        .play()
+        .catch((error) => console.error("Error playing audio:", error));
     } else {
       audio.pause();
     }
@@ -56,9 +61,9 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics 
     const container = lyricsContainerRef.current;
     if (!container) return;
 
-    const activelyric = container.querySelector(".active-lyric");
-    if (activelyric) {
-      activelyric.scrollIntoView({ behavior: "smooth", block: "center" });
+    const activeLyric = container.querySelector(".active-lyric");
+    if (activeLyric) {
+      activeLyric.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [state.context.currentLyricIndex]);
 
@@ -71,9 +76,11 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics 
     const audio = audioRef.current;
     if (!progressBar || !audio) return;
 
-    const clickPosition = (e.clientX - progressBar.getBoundingClientRect().left) / progressBar.offsetWidth;
+    const clickPosition =
+      (e.clientX - progressBar.getBoundingClientRect().left) /
+      progressBar.offsetWidth;
     const newTime = clickPosition * state.context.duration;
-    
+
     audio.currentTime = newTime;
     send({ type: "SEEK", time: newTime });
   };
@@ -97,7 +104,11 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics 
     <div className="audio-player">
       <audio ref={audioRef} src={audioSrc} />
       <button onClick={togglePlayPause}>
-        {state.matches("ready.playing") ? <Pause size={20} /> : <Play size={20} />}
+        {state.matches("ready.playing") ? (
+          <Pause size={20} />
+        ) : (
+          <Play size={20} />
+        )}
       </button>
       <div className="progress-container">
         <div
@@ -107,12 +118,15 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics 
         >
           <div
             className="progress"
-            style={{ width: `${(state.context.currentTime / state.context.duration) * 100}%` }}
+            style={{
+              width: `${(state.context.currentTime / state.context.duration) * 100}%`,
+            }}
           ></div>
         </div>
       </div>
       <div className="time-display">
-        {formatTime(state.context.currentTime)} / {formatTime(state.context.duration)}
+        {formatTime(state.context.currentTime)} /{" "}
+        {formatTime(state.context.duration)}
       </div>
       <div className="volume-control">
         <button onClick={toggleMute}>
@@ -131,7 +145,7 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics 
         {state.context.lyrics.map((lyric, index) => (
           <div
             key={index}
-            className={`lyric ${index === state.context.currentLyricIndex ? 'active-lyric' : ''}`}
+            className={`lyric ${index === state.context.currentLyricIndex ? "active-lyric" : ""}`}
           >
             {lyric.text}
           </div>

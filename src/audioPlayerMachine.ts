@@ -30,7 +30,7 @@ const updateDuration = assign(({ event }) => {
 
 const updateCurrentTime = assign(({ context, event }) => {
   if (event.type !== "TIME_UPDATE") return {};
-  
+
   const newCurrentTime = event.currentTime;
   const newLyricIndex = context.lyrics.findIndex(
     (lyric: Lyric, index: number) =>
@@ -46,7 +46,7 @@ const updateCurrentTime = assign(({ context, event }) => {
 
 const seekToTime = assign(({ context, event }) => {
   if (event.type !== "SEEK") return {};
-  
+
   const newTime = event.time;
   const newLyricIndex = context.lyrics.findIndex(
     (lyric: Lyric, index: number) =>
@@ -126,7 +126,3 @@ export const audioPlayerMachine = createMachine({
     },
   },
 });
-
-export type AudioPlayerMachine = typeof audioPlayerMachine;
-export type AudioPlayerActor = ActorRefFrom<AudioPlayerMachine>;
-export type AudioPlayerState = StateFrom<AudioPlayerMachine>;
