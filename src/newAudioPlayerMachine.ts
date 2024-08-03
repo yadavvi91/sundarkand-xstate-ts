@@ -16,6 +16,9 @@ type AudioPlayerEvent =
   | { type: "manual_scroll" }
   | { type: "change_volume"; volume: number };
 
+type ScrollMachineEvent = { type: "SCROLL" };
+type LyricMachineEvent = { type: "UPDATE" };
+
 interface Lyric {
   time: number;
   type: "chaupai" | "samput" | "doha" | "sortha" | "chhand";
@@ -39,7 +42,12 @@ type AudioPlayerContext = {
 };
 
 // Actor Machines
-const scrollMachine = createMachine({
+const scrollMachine = setup({
+  types: {} as {
+    events: ScrollMachineEvent;
+  },
+}).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5SwMYCcD2AbLA6AlhFmAMQDKAwgEoDyAMnQNoAMAuoqAA4az4Au+DADsOIAB6IAjAGZmuAKzMlzafPkB2AGyLNAFgA0IAJ5Tp03AE4rADgurN0ydfWTNAXzeHUmHLm-YsfCEocmp6JjZRbl4BYVEJBAAmeQtcV2ZXRMktRIt5a0MTBGtJXF0bdVtpdWZdTWtEjy90AL8WnCCQsVg+AEM+MFxegDMBtAAKSUUlAEoSf18FwOCWdiQQaP5BEXWEmTlppVUNbWY9QsRrTTKbBvVdXS01aQ9PECEMCDhRJaieLbiu0QAFpNBcEKDcMpoTClOomiAlgQiGA-jFtvFELpEuDJIlrrpXPJNBZEsx5KoGgikUtOmiATtQAlkqlrPIppoySUHtILLjpNcrBYGoprLpmGT3K8gA */
   id: "scroll",
   initial: "idle",
   states: {
@@ -60,7 +68,12 @@ const scrollMachine = createMachine({
   },
 });
 
-const lyricMachine = createMachine({
+const lyricMachine = setup({
+  types: {} as {
+    events: LyricMachineEvent;
+  },
+}).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QBsCeAnAlgYwHSYmTAGIBVABQBEBBAFQFEBtABgF1FQAHAe1kwBdM3AHYcQAD0QAWAEwAaEKkQAOAIy4ArM23MZGgMzN9yjQE59AXysLh3CHDFos2MTz6CRYyQgC0ANgUlXz9cHTDw7QB2axAnHHxCMFdeASFRJAlEDWVcU1M-ZnMZSPNmKVNlAMVEVWUZXINVYr99SNU2sqsrIA */
   id: "lyric",
   context: { currentLyricIndex: 0, currentOutlineIndex: 0 },
   initial: "idle",
@@ -86,6 +99,10 @@ export const audioPlayerMachine = setup({
     events: AudioPlayerEvent;
   },
   actions: {
+    spawnActors: ({ context, event }, params) => {
+      context.scrollActor = spawn(scrollMachine);
+      context.lyricActor = spawn(lyricMachine);
+    },
     showDataLoadedToast: ({ context, event }) => {
       console.log("Data loaded toast", context, event);
     },
@@ -107,41 +124,30 @@ export const audioPlayerMachine = setup({
     hideSeekingToast: ({ context, event }) => {
       console.log("Hide seeking toast", context, event);
     },
-    updateSeekPosition: ({ context, event }, params) => {
+    updateSeekPosition: ({ context, event }) => {
       if (event.type === "seek") {
         context.seekPosition = event.position;
       }
     },
-    updateCurrentPosition: ({ context, event }, params) => {
+    updateCurrentPosition: ({ context, event }) => {
       if (context.seekPosition !== null) {
         context.currentPosition = context.seekPosition;
         context.seekPosition = null;
       }
     },
-    updateTime: ({ context, event }, params) => {
+    updateTime: ({ context, event }) => {
       if (event.type === "time_update") {
         context.currentPosition = event.currentTime;
       }
     },
-    scrollToCurrentLyric: ({ context, event }, params) => {
-      // Logic to scroll to the current lyric
-      console.log("Scrolling to lyric index:", context.currentLyricIndex);
-    },
-    setManualScrolling: ({ context, event }, params) => {
-      context.isManualScrolling = true;
-    },
-    resetScrollTimeout: ({ context, event }, params) => {
-      if (context.scrollTimeout) {
-        clearTimeout(context.scrollTimeout);
-      }
-      context.scrollTimeout = setTimeout(() => {
-        context.isManualScrolling = false;
-      }, 15000) as unknown as number;
-    },
-    updateVolume: ({ context, event }, params) => {
+    updateVolume: ({ context, event }) => {
       if (event.type === "change_volume") {
         context.volume = event.volume;
       }
+    },
+    scrollToCurrentLyric: ({ context, event }) => {
+      // Logic to scroll to the current lyric
+      console.log("Scrolling to lyric index:", context.currentLyricIndex);
     },
     updateTimeAndLyric: ({ context }) => {
       const newLyricIndex = findLyricIndex(
@@ -156,8 +162,7 @@ export const audioPlayerMachine = setup({
         outlineIndex: newOutlineIndex,
       });
     },
-
-    handleLyricClick: ({ context }, event) => {
+    handleLyricClick: ({ context, event }) => {
       if (event.type === "click_lyric") {
         const newOutlineIndex = findOutlineIndex(context.lyrics, event.index);
         context.lyricActor?.send({
@@ -167,12 +172,12 @@ export const audioPlayerMachine = setup({
         });
       }
     },
-
     triggerManualScroll: ({ context }) => {
-      context.scrollActor?.send("SCROLL");
+      context.scrollActor?.send({ type: "SCROLL" });
     },
   },
 }).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QEMCuECWB7ACgG2QE8wAnAOgDssARZAF2QGIJ7kB9PLZTCqN2BiTqQA2gAYAuolAAHLLAx1sFaSAAeiAIwAWABxkxAdl2aATAFYANCEKITZc2Kfax5zQDYAnGO3aAvn7WaJi4BMTkLAwAMlw8UMysHLGikqpyCkpYKkjqiOam1rYIAMzm7gamxdrGYh7evgFB6Nj4RKRkkcgAwlgAtjJ4YMJ4hDHckIwDRGzB2OJSOemKyqoaCPmFWqYeZKYmpWaepqbumo0gs6Ft5FOEGLwAyqgULCQA1sgvZJcABLf3UB+AnocDI-14AEFmlhJmhYGB5ml5MssqtENVzGRDGJimYrDYtDjytpzMVTNp3OZHIZNGTzpdWuEwWEAU8Xsh3p8IN9oX8WbwgQxhLBmUQAVCQowAGZYEgAdw5EERi2RmWyoDWul0pgMFN0hnxRU8lLImkMnl0Ym81Nppnp0MZ7XBUDZrw+X1+zsFIJFzol2EYACNkABjN4KkhK1IqjIrHKao669z6w2IQyGHWmQylczWoy2+0hR03fku55urk8kJ8sUC4HC0V3SHQxjwsBvZWyVVxjV2bVJlObBAeU4OdzGbEuK2OXSFlphJ2l10c93cz2l70Nv0tpS9MBsVAySII6Nd2Oo+OICyaMjFHzJg1DzS1cruO9ki26FwU-yBC4OhcS1rMt2U5D1eS9etQW3SUQwAC0+GA2AANywPBUD3TsQCWNU0QQE5il2IwcTxIcjjEU101MHwtW-dxfyaItAMbVlyxXSt12AzdoLhSB-RhW4ZilYQSDYGReKwnCe1yBAMSxEiLDI3RMU8UlyUpG06T-BlmOdZcwLXCCNyg31eIgfjpVlCMowWM8UXVGTvB1e9BwJYcxFHN9TE8KpXHzLTGPna4WMeNiDKrbAaybQETLBMyLODMNrMk7sL17BBdETFzHzc3RkyxE5kxcTS7W0gDgr0sLVwirAooBbjTNQeFzJbNsO1PbDUochNnL1HKig8TQbw8icfCcVSxFnMqmIqpcqo4oyuNi8Smr4lt4MQ-dUPQzCOqktKZMpYlSVItyfP0Jxam2Kl-NKwKriZSrQOq2A4KwOUooAWhW+EfjoLgBDIOCMAgCAwAoSz5UVFLz26rZ8qpPrU2HTRzEMMhVLJCkbppAL-xmx65ueytXver6frAP6AboIGQbBiHEvDaG9q6vCzAR8wkafVxPAxtTsZKucHsXYD9Jet6Ptub7eKp5BAdJuUAQAMSsxUABVqch5KWdhtmSW0Axim8dxFLcobtEIg0rtRwXpqCwnRfmr4FfJmX-rlmmFeV1XIw1j3GDUKDvmE0gAApHDEABKRgdNmx3iediXXdW2X5Yl72od96mYfstmTn0RGH2RobnzIEksY026heLEKQIrROyalinU899PeAAIVDJms-9xntdszrdcvYd9dvQvXKNHwsUcMwbaru3haA6KxZJpOm7d6myC9juu+sv2BADoPkBDkhw6caPY4d5ene5F315T920-egFO6S9Xs513Ph-ZgvOaL7mzBl35pXXGd18b2xFtfBOt8k5tRbmQEGgxWxgHbDnXC38XA6lKD5fqWhqjlGomSfUI1TiGHcNXXSRN64wLJnAx+nsUFvABMg9sbAQx9AGEME8A99pw2HHsfQhhtDbAnloE2hFUb0TMCQs05CF41yetQresDGHwLaswtqbApTIAwIMGySIh7pTMFqLEwjNCiOHPkco2IiHYnHKQuR90FFUPYl8EYJAMAhh+PcESoY1QIIgEgkMeBPFvA4IQDxIY0HSTWNeW82Vi5G15noTwk5aL3gYuAxetcV5uIiZ47xFBfEhn8YgsAjBeifFQMgPA-AQwkDQngaJB1YmkkNqdAa75DaUnNOkn8AQ-xUDBvAHIl9SAGK-ulT67ghzTIocFKgtAGATPQelYRQ5+yXTGm4LwPhMljIiKwMYcQVkxMQMUeiZcvzFFwRlZyl1ip1D2fMpknQej9EGMMUYyQICnJaVeHEZALFVEIlsx5uyGjyMofHahfy+E23iVzNyRUsTZjcMpYoxRLRaheZA1i0Cap1TrEKOAcK8KEMRf-XKZIyDjhpPRC5NJhG4qXvipRnFooNVrvxMlw8syER8tgm5xcdCYiJGjT8dF9nlSvmy1xhlqyQRJY1ZqPKYyTMOu4V845jQWOfEbIBFccYFihXHKBSi75hGlg-amvKjHPhvMjEw6MLBOBMDiLFk0ppOOhea+VyjG5WubvQ2moNwZ2pkubXmIqp76vUsazFLKck3wDZLING8PapoznvW16rVmRuEQbcwykcHF3JJiQh8bbY+rNXK8KlqiDWt+iG7eUBX7dwgPvOgEa1g6HJA4EtwruYeSIka6tWTnEwv9S7Ohua7L5rWKk18tQyim06SYmxVb541tlaFAlM7VEhrKT2vBnheaeB0B5NdWgqQ6h1V+VS9jZFJsUdOlR7Y1GMIBCe9y-b3ArpNsXXMBs9DlzsWQ59prd1139e4gpPjSB+Okrw8lgK7xIoGtdBwFyJV9Poi+lx4U4NeIQyQJDWQAmDB-XeTE1QTirqA5zIF2hvC9K-BkgZfggA */
   id: "audioPlayer",
   context: {
     currentPosition: 0,
@@ -198,10 +203,7 @@ export const audioPlayerMachine = setup({
       on: {
         data_loaded: {
           target: "dataCompletelyLoaded",
-          actions: assign({
-            scrollActor: () => spawn(scrollMachine),
-            lyricActor: () => spawn(lyricMachine),
-          }),
+          actions: { type: "spawnActors" },
         },
       },
     },
