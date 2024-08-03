@@ -35,8 +35,8 @@ export const audioPlayerMachine = setup({
     showBackwardingToast: ({ context, event }) => {
       console.log("Show backwarding toast", context, event);
     },
-    hideForwardingToast: ({ context, event }) => {
-      console.log("Hide forwarding toast", context, event);
+    hideToast: ({ context, event }) => {
+      console.log("Hide toast", context, event);
     },
     showSeekingToast: ({ context, event }) => {
       console.log("Show seeking toast", context, event);
@@ -93,11 +93,11 @@ export const audioPlayerMachine = setup({
                 pause: "pausedAudio",
                 forward: {
                   actions: "showForwardingToast",
-                  target: "#audioPlayerToast.showingToast",
+                  target: "#audioPlayerToast.showingForwardToast",
                 },
                 backward: {
                   actions: "showBackwardingToast",
-                  target: "#audioPlayerToast.showingToast",
+                  target: "#audioPlayerToast.showingBackwardToast",
                 },
                 seek: {
                   actions: ["updateSeekPosition", "showSeekingToast"],
@@ -110,11 +110,11 @@ export const audioPlayerMachine = setup({
                 play_after_pause: "playingAudio",
                 forward: {
                   actions: "showForwardingToast",
-                  target: "#audioPlayerToast.showingToast",
+                  target: "#audioPlayerToast.showingForwardToast",
                 },
                 backward: {
                   actions: "showBackwardingToast",
-                  target: "#audioPlayerToast.showingToast",
+                  target: "#audioPlayerToast.showingBackwardToast",
                 },
                 seek: {
                   actions: ["updateSeekPosition", "showSeekingToast"],
@@ -130,30 +130,39 @@ export const audioPlayerMachine = setup({
           states: {
             hidden: {
               on: {
-                forward: "showingToast",
-                backward: "showingToast",
+                forward: "showingForwardToast",
+                backward: "showingBackwardToast",
               },
             },
-            showingToast: {
-              entry: ["showForwardingToast", "showBackwardingToast"],
+            showingForwardToast: {
+              entry: "showForwardingToast",
               after: {
                 500: "hidden",
               },
               on: {
                 forward: {
                   actions: "showForwardingToast",
-                  target: "showingToast",
-                },
-                backward: {
-                  actions: "showBackwardingToast",
-                  target: "showingToast",
+                  target: "showingForwardToast",
                 },
               },
-              exit: "hideForwardingToast",
+              exit: "hideToast",
+            },
+            showingBackwardToast: {
+              entry: "showBackwardingToast",
+              after: {
+                500: "hidden",
+              },
+              on: {
+                backward: {
+                  actions: "showBackwardingToast",
+                  target: "showingBackwardToast",
+                },
+              },
+              exit: "hideToast",
             },
           },
         },
-        seek: {
+        "show seek toast": {
           id: "audioPlayerSeek",
           initial: "idle",
           states: {
