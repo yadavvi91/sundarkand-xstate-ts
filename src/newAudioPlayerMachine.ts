@@ -1,4 +1,4 @@
-import { createMachine, setup } from "xstate";
+import { createMachine, setup, interpret } from "xstate";
 
 export const audioPlayerMachine = setup({
   actions: {
@@ -12,16 +12,18 @@ export const audioPlayerMachine = setup({
       console.log(event);
       console.log(params);
     },
+    showForwardingToast: ({ context, event }) => {
+      console.log("Show forwarding toast");
+      console.log(context);
+      console.log(event);
+    },
+    hideForwardingToast: ({ context, event }) => {
+      console.log("Hide forwarding toast");
+      console.log(context);
+      console.log(event);
+    },
   },
-  actors: {},
-  delays: {},
-  guards: {},
-  // schemas: {}, // schemas is deprecated in v5
   types: {
-    // this is of type SetupTypes, in SetupTypes we can only specify
-    // - context, events, children, tags, input, output, emitted, meta
-    // other things like actions, actors etc. for them the types should
-    // be declared in createMachine() as they are MachineTypes
     context: {} as {},
     events: {} as
       | { type: "data_loading_started" }
@@ -32,98 +34,84 @@ export const audioPlayerMachine = setup({
       | { type: "forward" },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOnwHsACCdAF3QGIb6B9AG3PQgKhdnoBOtSAG0ADAF1EoAA7lYuWrnL5pIAB6IAjAHYALCS0A2PQE4jAVjFitYozoAcAGhABPRACYPAZhKnvFiYWHg46RsYBAL6RLmhYeISkzOiUHFw8THTo7JwQopJqcgpKKmqaCMEu7gjeOqYk1o0OpmIWoWKmOtGxGDgExCTJlJjkqDJsYMJsrqm5kAzj6K4s6ACu3OTiUkggRYrKqjvlALQ6Wn6W3gEODnrWejpViKEWfp12YQ5XJlrdIHF9RIkRauHiUWCrfA0AQAa3QUOBbCWYLWGwWa1gYC2hXk+1KR0QLVeDjED28lhJDwcWieCAc9hIbSuNw6D1MFgsfwBCQGILBEKh6Fh8IgiOR+CglFRyjI5AEGDY00ofIlUvWygYADM5QB3IUQbE7PYlQ6gcq1Xy2cn06k6QJ6PS0m5GEhfbx6IzUoyejwWX4xf69HmkFWSgXQuEI0NqjYkbUCPUCbiq6XkBjqfh0MAkdCa4QCZBWMREBjc-ohpGg1XhoWR0XR1Nx3X6lHqzYFI24k1lRAWwxia2e3T2x1uZ7eepXAJaDyOHRXYxcoPlsVVsOQiMi4EYyAxjUglZ5sACFgyHeG2Rdg49hBE12k+cUh-U2l1F16Yye7wODyWMTzpd4hXaMa2FKMdwgPdyFleV0EVGYz1WBQUzbLVmyTC9divfEzW0EJXg5M4Wn0OpmiMWlTGMEgP3sX9QndNougDMsgRAjday3RDMUgxt40TZNJVTdNM2EHMjwLIsSxY3lK35diwPrCCoKbBMWxQjZMONa8CQQLR3QcEgdHnPR6QHKwdA8Udqi+AxfRsGwLHnCzvA8aIAwoPJ4B2aSiBxYptNwhBji0LR6nMCwrjaW57keMddPJaiAhMX0Qu8MQvG8QDAQGChqCyPy8VNDREA-Ehfw6IxWjCexOlMWlLI8aiHGCcJOl9YI9Cy4NBiyWZ0glArux0kJGqqsw-XsbwZys3takMvSrg-X8fU5ZjlyBIYRjGCYphmNI8ggQaAuKoK0oaUxTA8GwjA8Uxbk6YxaQ9XxbpCSiLEusxOrWoDWNk6t5LrI6cJOiwDAuvRbruKbwh8WlkoaRotA+kyBy8LrgP+9dBQU1dWw2YGivKWxGohqGB2MGdvFfd1GTdfR2QCdqMb+8Vsc3KMseUihYPg5UudTQmb2RsQ3kh0xocpuG4tuXxKJ9HwJzu4IWZktnwUBziBbbFT+Px5QhZ0qx6j08aPBCyGQmpmWvAaGzKK+ZLLNVit1dAuttyQ3dBc7fyQeJ-9fA5MkvjqYJv1fW7GUaW6fyMimXbxgGcY9rjvZ1nmFSVLj9fIQ3ApC83GTB+dQ-ZHxnBl79XUW26Ram25E7YlPOKU3j0IEqD85OrQTIMSk7QW3RyWt6zdERmwPTOVoLocNzIiAA */
-  initial: "no data",
+  initial: "noData",
   types: {} as {
-    // this is of type MachineTypes
     actions:
       | { type: "showDataLoadedToast"; params: { msg: string } }
-      | { type: "showStartPlayingToast"; params: { msg: string } };
+      | { type: "showStartPlayingToast"; params: { msg: string } }
+      | { type: "showForwardingToast" }
+      | { type: "hideForwardingToast" };
   },
   states: {
-    "no data": {
+    noData: {
       on: {
-        data_loading_started: {
-          target: "data loading",
-        },
+        data_loading_started: "dataLoading",
       },
     },
-    "data loading": {
+    dataLoading: {
       on: {
-        data_loaded: {
-          target: "data completely loaded",
-        },
+        data_loaded: "dataCompletelyLoaded",
       },
     },
-    "data completely loaded": {
-      on: {
-        play_audio: {
-          target: "playing sundarkand",
-        },
-      },
+    dataCompletelyLoaded: {
       entry: [
-        {
-          type: "showDataLoadedToast",
-          params: { msg: "entered" },
-        },
-        {
-          type: "showStartPlayingToast",
-          params: { msg: "playing" },
-        },
+        { type: "showDataLoadedToast", params: { msg: "Data loaded" } },
+        { type: "showStartPlayingToast", params: { msg: "Start playing" } },
       ],
+      on: {
+        play_audio: "playingSundarkand",
+      },
     },
-    "playing sundarkand": {
-      initial: "playing audio",
+    playingSundarkand: {
+      type: "parallel",
       states: {
-        "playing audio": {
-          initial: "normally playing audio",
+        audio: {
+          initial: "playingAudio",
           states: {
-            "normally playing audio": {
+            playingAudio: {
               on: {
-                "forward": {
-                  target: "forwarding audio"
-                }
-              }
-            },
-            "forwarding audio": {
-              entry: "showForwardingToast",
-              after: {
-                500: "normally playing audio",
+                pause: "pausedAudio",
+                forward: {
+                  actions: "showForwardingToast",
+                  target: "#audioPlayerToast.showingToast",
+                },
               },
-              exit: "hideForwardingToast",
             },
-          },
-          on: {
-            pause: {
-              target: "paused audio",
+            pausedAudio: {
+              on: {
+                play_after_pause: "playingAudio",
+                forward: {
+                  actions: "showForwardingToast",
+                  target: "#audioPlayerToast.showingToast",
+                },
+              },
             },
           },
         },
-
-        "paused audio": {
-          initial: "normally pausing audio",
+        toast: {
+          id: "audioPlayerToast",
+          initial: "hidden",
           states: {
-            "normally pausing audio": {
+            hidden: {
               on: {
-                "forward": {
-                  target: "forwarding audio"
-                }
-              }
+                forward: "showingToast",
+              },
             },
-            "forwarding audio": {
+            showingToast: {
               entry: "showForwardingToast",
               after: {
-                500: "normally pausing audio",
+                500: "hidden",
+              },
+              on: {
+                forward: {
+                  actions: "showForwardingToast",
+                  internal: false,
+                  target: "showingToast",
+                },
               },
               exit: "hideForwardingToast",
             },
           },
-          on: {
-            play_after_pause: {
-              target: "playing audio",
-            },
-          },
-
         },
       },
     },
