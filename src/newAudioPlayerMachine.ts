@@ -1,4 +1,4 @@
-import { createMachine, setup } from "xstate";
+import { setup } from "xstate";
 
 type AudioPlayerEvent =
   | { type: "data_loading_started" }
@@ -10,11 +10,30 @@ type AudioPlayerEvent =
   | { type: "backward" }
   | { type: "seek"; position: number }
   | { type: "seek_complete" }
-  | { type: "seek_failed" };
+  | { type: "seek_failed" }
+  | { type: "time_update"; currentTime: number }
+  | { type: "click_lyric"; index: number }
+  | { type: "manual_scroll" }
+  | { type: "change_volume"; volume: number };
+
+export interface Lyric {
+  time: number;
+  type: "chaupai" | "samput" | "doha" | "sortha" | "chhand";
+  text: string;
+  outlineIndex: number;
+  footnoteIds: number[];
+}
 
 type AudioPlayerContext = {
   currentPosition: number;
   seekPosition: number | null;
+  duration: number;
+  currentLyricIndex: number;
+  currentOutlineIndex: number;
+  volume: number;
+  isManualScrolling: boolean;
+  scrollTimeout: number | null;
+  lyrics: Lyric[];
 };
 
 export const audioPlayerMachine = setup({
@@ -44,15 +63,57 @@ export const audioPlayerMachine = setup({
     hideSeekingToast: ({ context, event }) => {
       console.log("Hide seeking toast", context, event);
     },
-    updateSeekPosition: ({ context, event }) => {
+    updateSeekPosition: ({ context, event }, params) => {
       if (event.type === "seek") {
         context.seekPosition = event.position;
       }
     },
-    updateCurrentPosition: ({ context }) => {
+    updateCurrentPosition: ({ context, event }, params) => {
       if (context.seekPosition !== null) {
         context.currentPosition = context.seekPosition;
         context.seekPosition = null;
+      }
+    },
+    updateTime: ({ context, event }, params) => {
+      if (event.type === "time_update") {
+        context.currentPosition = event.currentTime;
+      }
+    },
+    updateLyricIndex: ({ context, event }, params) => {
+      // Logic to find the correct lyric index based on currentPosition
+      // This is a placeholder and should be implemented based on your lyrics data structure
+      const newLyricIndex = findLyricIndex(
+        context.lyrics,
+        context.currentPosition,
+        context.duration,
+      );
+      context.currentLyricIndex = newLyricIndex;
+
+      // Logic to find the correct outline index based on currentLyricIndex
+      // This is a placeholder and should be implemented based on your outline data structure
+      context.currentOutlineIndex = findOutlineIndex(
+        context.lyrics,
+        newLyricIndex,
+      );
+    },
+    scrollToCurrentLyric: ({ context, event }, params) => {
+      // Logic to scroll to the current lyric
+      console.log("Scrolling to lyric index:", context.currentLyricIndex);
+    },
+    setManualScrolling: ({ context, event }, params) => {
+      context.isManualScrolling = true;
+    },
+    resetScrollTimeout: ({ context, event }, params) => {
+      if (context.scrollTimeout) {
+        clearTimeout(context.scrollTimeout);
+      }
+      context.scrollTimeout = setTimeout(() => {
+        context.isManualScrolling = false;
+      }, 15000) as unknown as number;
+    },
+    updateVolume: ({ context, event }, params) => {
+      if (event.type === "change_volume") {
+        context.volume = event.volume;
       }
     },
   },
@@ -60,6 +121,13 @@ export const audioPlayerMachine = setup({
   context: {
     currentPosition: 0,
     seekPosition: null,
+    duration: 0,
+    currentLyricIndex: 0,
+    currentOutlineIndex: 0,
+    volume: 1,
+    isManualScrolling: false,
+    scrollTimeout: null,
+    lyrics: [],
   },
   initial: "noData",
   states: {
@@ -108,6 +176,26 @@ export const audioPlayerMachine = setup({
                 seek: {
                   target: "#audioPlayerSeek.seeking",
                 },
+                time_update: {
+                  actions: [
+                    "updateTime",
+                    "updateLyricIndex",
+                    "scrollToCurrentLyric",
+                  ],
+                },
+                click_lyric: {
+                  actions: [
+                    "updateSeekPosition",
+                    "updateLyricIndex",
+                    "scrollToCurrentLyric",
+                  ],
+                },
+                manual_scroll: {
+                  actions: ["setManualScrolling", "resetScrollTimeout"],
+                },
+                change_volume: {
+                  actions: "updateVolume",
+                },
               },
             },
             pausedAudio: {
@@ -129,6 +217,16 @@ export const audioPlayerMachine = setup({
                 },
                 seek: {
                   target: "#audioPlayerSeek.seeking",
+                },
+                click_lyric: {
+                  actions: [
+                    "updateSeekPosition",
+                    "updateLyricIndex",
+                    "scrollToCurrentLyric",
+                  ],
+                },
+                change_volume: {
+                  actions: "updateVolume",
                 },
               },
             },
@@ -209,3 +307,18 @@ export const audioPlayerMachine = setup({
     },
   },
 });
+
+function findLyricIndex(
+  lyrics: Lyric[],
+  currentPosition: number,
+  duration: number,
+): number {
+  // Implementation to find the correct lyric index based on currentTime
+  const newTime = currentPosition * duration;
+  return lyrics.findIndex((lyric) => lyric.time > newTime) - 1;
+}
+
+function findOutlineIndex(lyrics: Lyric[], newLyricIndex: number): number {
+  // Implementation to find the correct outline index based on lyricIndex
+  return lyrics[newLyricIndex]?.outlineIndex || 0;
+}
