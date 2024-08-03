@@ -293,16 +293,19 @@ export const audioPlayerMachine = setup({
             },
             lyricClicked: {
               entry: [
-                "updateSeekPosition",
-                "updateLyricIndex",
-                "scrollToCurrentLyric",
+                { type: "updateSeekPosition", params: {} },
+                { type: "updateLyricIndex", params: {} },
+                { type: "scrollToCurrentLyric", params: {} },
               ],
               after: {
                 0: "idle",
               },
             },
             manualScrolling: {
-              entry: ["setManualScrolling", "resetScrollTimeout"],
+              entry: [
+                { type: "setManualScrolling", params: {} },
+                { type: "resetScrollTimeout", params: {} },
+              ],
               after: {
                 15000: "idle",
               },
