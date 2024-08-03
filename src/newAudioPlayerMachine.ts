@@ -92,15 +92,20 @@ export const audioPlayerMachine = setup({
               on: {
                 pause: "pausedAudio",
                 forward: {
-                  actions: "showForwardingToast",
+                  actions: {
+                    type: "showForwardingToast",
+                    params: { msg: "Forwarding" },
+                  },
                   target: "#audioPlayerToast.showingForwardToast",
                 },
                 backward: {
-                  actions: "showBackwardingToast",
+                  actions: {
+                    type: "showBackwardingToast",
+                    params: { msg: "Backwarding" },
+                  },
                   target: "#audioPlayerToast.showingBackwardToast",
                 },
                 seek: {
-                  actions: ["updateSeekPosition", "showSeekingToast"],
                   target: "#audioPlayerSeek.seeking",
                 },
               },
@@ -109,15 +114,20 @@ export const audioPlayerMachine = setup({
               on: {
                 play_after_pause: "playingAudio",
                 forward: {
-                  actions: "showForwardingToast",
+                  actions: {
+                    type: "showForwardingToast",
+                    params: { msg: "Forwarding" },
+                  },
                   target: "#audioPlayerToast.showingForwardToast",
                 },
                 backward: {
-                  actions: "showBackwardingToast",
+                  actions: {
+                    type: "showBackwardingToast",
+                    params: { msg: "Backwarding" },
+                  },
                   target: "#audioPlayerToast.showingBackwardToast",
                 },
                 seek: {
-                  actions: ["updateSeekPosition", "showSeekingToast"],
                   target: "#audioPlayerSeek.seeking",
                 },
               },
@@ -172,14 +182,23 @@ export const audioPlayerMachine = setup({
               },
             },
             seeking: {
-              entry: "showSeekingToast",
+              entry: [
+                { type: "updateSeekPosition", params: {} },
+                {
+                  type: "showSeekingToast",
+                  params: { msg: "Seeking in progress" },
+                },
+              ],
               on: {
                 seek_complete: {
-                  actions: ["updateCurrentPosition", "hideSeekingToast"],
+                  actions: [
+                    { type: "updateCurrentPosition", params: {} },
+                    { type: "hideSeekingToast", params: {} },
+                  ],
                   target: "idle",
                 },
                 seek_failed: {
-                  actions: "hideSeekingToast",
+                  actions: { type: "hideSeekingToast", params: {} },
                   target: "idle",
                 },
               },
