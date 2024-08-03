@@ -1,47 +1,43 @@
-import { createMachine, setup, interpret } from "xstate";
+import { setup } from "xstate";
+
+type AudioPlayerEvent =
+  | { type: "data_loading_started" }
+  | { type: "data_loaded" }
+  | { type: "play_audio" }
+  | { type: "play_after_pause" }
+  | { type: "pause" }
+  | { type: "forward" };
+
+type AudioPlayerContext = {
+  // Define your context properties here, for example:
+  // currentTrack: string;
+  // volume: number;
+};
 
 export const audioPlayerMachine = setup({
+  types: {} as {
+    context: AudioPlayerContext;
+    events: AudioPlayerEvent;
+  },
   actions: {
-    showDataLoadedToast: ({ context, event }, params) => {
-      console.log(context);
-      console.log(event);
-      console.log(params);
+    showDataLoadedToast: ({ context, event }) => {
+      console.log("Data loaded toast", context, event);
     },
-    showStartPlayingToast: ({ context, event }, params) => {
-      console.log(context);
-      console.log(event);
-      console.log(params);
+    showStartPlayingToast: ({ context, event }) => {
+      if (event.type === "forward") {
+        console.log("Starting audio player", context, event);
+      }
+      console.log("Start playing toast", context, event);
     },
     showForwardingToast: ({ context, event }) => {
-      console.log("Show forwarding toast");
-      console.log(context);
-      console.log(event);
+      console.log("Show forwarding toast", context, event);
     },
     hideForwardingToast: ({ context, event }) => {
-      console.log("Hide forwarding toast");
-      console.log(context);
-      console.log(event);
+      console.log("Hide forwarding toast", context, event);
     },
-  },
-  types: {
-    context: {} as {},
-    events: {} as
-      | { type: "data_loading_started" }
-      | { type: "data_loaded" }
-      | { type: "play_audio" }
-      | { type: "play_after_pause" }
-      | { type: "pause" }
-      | { type: "forward" },
   },
 }).createMachine({
   initial: "noData",
-  types: {} as {
-    actions:
-      | { type: "showDataLoadedToast"; params: { msg: string } }
-      | { type: "showStartPlayingToast"; params: { msg: string } }
-      | { type: "showForwardingToast" }
-      | { type: "hideForwardingToast" };
-  },
   states: {
     noData: {
       on: {
