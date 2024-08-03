@@ -16,9 +16,6 @@ type AudioPlayerEvent =
   | { type: "manual_scroll" }
   | { type: "change_volume"; volume: number };
 
-type ScrollMachineEvent = { type: "SCROLL" };
-type LyricMachineEvent = { type: "UPDATE" };
-
 interface Lyric {
   time: number;
   type: "chaupai" | "samput" | "doha" | "sortha" | "chhand";
@@ -42,12 +39,13 @@ type AudioPlayerContext = {
 };
 
 // Actor Machines
+type ScrollMachineEvent = { type: "SCROLL" };
+
 const scrollMachine = setup({
   types: {} as {
     events: ScrollMachineEvent;
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwMYCcD2AbLA6AlhFmAMQDKAwgEoDyAMnQNoAMAuoqAA4az4Au+DADsOIAB6IAjAGZmuAKzMlzafPkB2AGyLNAFgA0IAJ5Tp03AE4rADgurN0ydfWTNAXzeHUmHLm-YsfCEocmp6JjZRbl4BYVEJBAAmeQtcV2ZXRMktRIt5a0MTBGtJXF0bdVtpdWZdTWtEjy90AL8WnCCQsVg+AEM+MFxegDMBtAAKSUUlAEoSf18FwOCWdiQQaP5BEXWEmTlppVUNbWY9QsRrTTKbBvVdXS01aQ9PECEMCDhRJaieLbiu0QAFpNBcEKDcMpoTClOomiAlgQiGA-jFtvFELpEuDJIlrrpXPJNBZEsx5KoGgikUtOmiATtQAlkqlrPIppoySUHtILLjpNcrBYGoprLpmGT3K8gA */
   id: "scroll",
   initial: "idle",
   states: {
@@ -68,12 +66,30 @@ const scrollMachine = setup({
   },
 });
 
+type LyricMachineEvent = {
+  type: "UPDATE";
+  index: number;
+  outlineIndex: number;
+};
+type LyricMachineContext = {
+  currentLyricIndex: number;
+  currentOutlineIndex: number;
+};
+
 const lyricMachine = setup({
   types: {} as {
+    context: LyricMachineContext;
     events: LyricMachineEvent;
   },
+  actions: {
+    updateLyricIndices: ({ context, event }) => {
+      if (event.type === "UPDATE") {
+        context.currentLyricIndex = event.index;
+        context.currentOutlineIndex = event.outlineIndex;
+      }
+    },
+  },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QBsCeAnAlgYwHSYmTAGIBVABQBEBBAFQFEBtABgF1FQAHAe1kwBdM3AHYcQAD0QAWAEwAaEKkQAOAIy4ArM23MZGgMzN9yjQE59AXysLh3CHDFos2MTz6CRYyQgC0ANgUlXz9cHTDw7QB2axAnHHxCMFdeASFRJAlEDWVcU1M-ZnMZSPNmKVNlAMVEVWUZXINVYr99SNU2sqsrIA */
   id: "lyric",
   context: { currentLyricIndex: 0, currentOutlineIndex: 0 },
   initial: "idle",
@@ -81,12 +97,7 @@ const lyricMachine = setup({
     idle: {
       on: {
         UPDATE: {
-          actions: assign(
-            (context, event: { index: number; outlineIndex: number }) => ({
-              currentLyricIndex: event.index,
-              currentOutlineIndex: event.outlineIndex,
-            }),
-          ),
+          actions: "updateLyricIndices",
         },
       },
     },
