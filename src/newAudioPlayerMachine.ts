@@ -177,21 +177,7 @@ export const audioPlayerMachine = setup({
                   target: "#audioPlayerSeek.seeking",
                 },
                 time_update: {
-                  actions: [
-                    "updateTime",
-                    "updateLyricIndex",
-                    "scrollToCurrentLyric",
-                  ],
-                },
-                click_lyric: {
-                  actions: [
-                    "updateSeekPosition",
-                    "updateLyricIndex",
-                    "scrollToCurrentLyric",
-                  ],
-                },
-                manual_scroll: {
-                  actions: ["setManualScrolling", "resetScrollTimeout"],
+                  actions: ["updateTime", "updateLyricIndex"],
                 },
                 change_volume: {
                   actions: "updateVolume",
@@ -217,13 +203,6 @@ export const audioPlayerMachine = setup({
                 },
                 seek: {
                   target: "#audioPlayerSeek.seeking",
-                },
-                click_lyric: {
-                  actions: [
-                    "updateSeekPosition",
-                    "updateLyricIndex",
-                    "scrollToCurrentLyric",
-                  ],
                 },
                 change_volume: {
                   actions: "updateVolume",
@@ -298,6 +277,39 @@ export const audioPlayerMachine = setup({
                 seek_failed: {
                   actions: { type: "hideSeekingToast", params: {} },
                   target: "idle",
+                },
+              },
+            },
+          },
+        },
+        "lyric interaction": {
+          initial: "idle",
+          states: {
+            idle: {
+              on: {
+                click_lyric: "lyricClicked",
+                manual_scroll: "manualScrolling",
+              },
+            },
+            lyricClicked: {
+              entry: [
+                "updateSeekPosition",
+                "updateLyricIndex",
+                "scrollToCurrentLyric",
+              ],
+              after: {
+                0: "idle",
+              },
+            },
+            manualScrolling: {
+              entry: ["setManualScrolling", "resetScrollTimeout"],
+              after: {
+                15000: "idle",
+              },
+              on: {
+                manual_scroll: {
+                  target: "manualScrolling",
+                  actions: "resetScrollTimeout",
                 },
               },
             },
