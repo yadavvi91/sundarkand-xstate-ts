@@ -61,7 +61,7 @@ export const audioPlayerMachine = setup({
     playingSundarkand: {
       type: "parallel",
       states: {
-        audio: {
+        'audio playing states': {
           initial: "playingAudio",
           states: {
             playingAudio: {
@@ -84,7 +84,7 @@ export const audioPlayerMachine = setup({
             },
           },
         },
-        toast: {
+        'show play-pause toast': {
           id: "audioPlayerToast",
           initial: "hidden",
           states: {
