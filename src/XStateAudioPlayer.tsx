@@ -2,7 +2,14 @@ import React, { useRef, useEffect } from "react";
 import { useMachine } from "@xstate/react";
 import { createBrowserInspector } from "@statelyai/inspect";
 import { audioPlayerMachine, Lyric } from "./audioPlayerMachine";
-import { Play, Pause, Volume, VolumeX } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume,
+  VolumeX,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 
 interface XStateAudioPlayerProps {
   audioSrc: string;
@@ -100,15 +107,41 @@ const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const handleForward = () => {
+    send({ type: "FORWARD" });
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.min(
+        audioRef.current.duration,
+        audioRef.current.currentTime + 5,
+      );
+    }
+  };
+
+  const handleBackward = () => {
+    send({ type: "BACKWARD" });
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(
+        0,
+        audioRef.current.currentTime - 5,
+      );
+    }
+  };
+
   return (
     <div className="audio-player">
       <audio ref={audioRef} src={audioSrc} />
+      <button onClick={handleBackward}>
+        <SkipBack size={20} />
+      </button>
       <button onClick={togglePlayPause}>
         {state.matches("ready.playing") ? (
           <Pause size={20} />
         ) : (
           <Play size={20} />
         )}
+      </button>
+      <button onClick={handleForward}>
+        <SkipForward size={20} />
       </button>
       <div className="progress-container">
         <div

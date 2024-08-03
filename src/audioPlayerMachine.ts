@@ -22,7 +22,9 @@ export type AudioPlayerEvent =
   | { type: "SEEK"; time: number }
   | { type: "VOLUME_CHANGE"; volume: number }
   | { type: "TOGGLE_MUTE" }
-  | { type: "SET_LYRICS"; lyrics: Lyric[] };
+  | { type: "SET_LYRICS"; lyrics: Lyric[] }
+  | { type: "FORWARD" }
+  | { type: "BACKWARD" };
 
 const updateDuration = assign(({ event }) => {
   return { duration: event.type === "LOADED" ? event.duration : undefined };
@@ -35,12 +37,14 @@ const updateCurrentTime = assign(({ context, event }) => {
   const newLyricIndex = context.lyrics.findIndex(
     (lyric: Lyric, index: number) =>
       lyric.time <= newCurrentTime &&
-      (index === context.lyrics.length - 1 || context.lyrics[index + 1].time > newCurrentTime)
+      (index === context.lyrics.length - 1 ||
+        context.lyrics[index + 1].time > newCurrentTime),
   );
 
   return {
     currentTime: newCurrentTime,
-    currentLyricIndex: newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
+    currentLyricIndex:
+      newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
   };
 });
 
@@ -51,12 +55,14 @@ const seekToTime = assign(({ context, event }) => {
   const newLyricIndex = context.lyrics.findIndex(
     (lyric: Lyric, index: number) =>
       lyric.time <= newTime &&
-      (index === context.lyrics.length - 1 || context.lyrics[index + 1].time > newTime)
+      (index === context.lyrics.length - 1 ||
+        context.lyrics[index + 1].time > newTime),
   );
 
   return {
     currentTime: newTime,
-    currentLyricIndex: newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
+    currentLyricIndex:
+      newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
   };
 });
 
@@ -70,6 +76,28 @@ const toggleMute = assign(({ context }) => {
 
 const setLyrics = assign(({ event }) => {
   return { lyrics: event.type === "SET_LYRICS" ? event.lyrics : undefined };
+});
+
+const seekRelative = assign(({ context, event }) => {
+  if (event.type !== "FORWARD" && event.type !== "BACKWARD") return {};
+
+  const seekAmount = event.type === "FORWARD" ? 5 : -5;
+  const newTime = Math.max(
+    0,
+    Math.min(context.duration, context.currentTime + seekAmount),
+  );
+  const newLyricIndex = context.lyrics.findIndex(
+    (lyric: Lyric, index: number) =>
+      lyric.time <= newTime &&
+      (index === context.lyrics.length - 1 ||
+        context.lyrics[index + 1].time > newTime),
+  );
+
+  return {
+    currentTime: newTime,
+    currentLyricIndex:
+      newLyricIndex !== -1 ? newLyricIndex : context.currentLyricIndex,
+  };
 });
 
 export const audioPlayerMachine = createMachine({
@@ -121,6 +149,12 @@ export const audioPlayerMachine = createMachine({
         },
         TOGGLE_MUTE: {
           actions: toggleMute,
+        },
+        FORWARD: {
+          actions: seekRelative,
+        },
+        BACKWARD: {
+          actions: seekRelative,
         },
       },
     },
