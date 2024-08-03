@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useMachine } from "@xstate/react";
+import { createBrowserInspector } from '@statelyai/inspect';
 import { audioPlayerMachine, Lyric } from "./audioPlayerMachine";
 import { Play, Pause, Volume, VolumeX } from "lucide-react";
 
@@ -7,12 +8,13 @@ interface XStateAudioPlayerProps {
   audioSrc: string;
   lyrics: Lyric[];
 }
+const { inspect } = createBrowserInspector();
 
 const XStateAudioPlayer: React.FC<XStateAudioPlayerProps> = ({ audioSrc, lyrics }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
-  const [state, send] = useMachine(audioPlayerMachine);
+  const [state, send] = useMachine(audioPlayerMachine, { inspect });
 
   useEffect(() => {
     const audio = audioRef.current;
