@@ -274,6 +274,12 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 absolute inset-0">
       <div className="flex w-full max-w-[1600px]">
