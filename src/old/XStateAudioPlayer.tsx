@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { useMachine } from "@xstate/react";
 import { createBrowserInspector } from "@statelyai/inspect";
-import { audioPlayerMachine, Lyric } from "./audioPlayerMachine";
+import { audioPlayerMachine, Lyric } from "./audioPlayerMachine.ts";
 import {
   Play,
   Pause,
