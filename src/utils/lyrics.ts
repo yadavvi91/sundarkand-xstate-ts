@@ -1,5 +1,5 @@
 // import soundVikesh from "./assets/vikesh-june15-2024.wav";
-import soundPavan from "./assets/pavan-dec23-2024.wav";
+import soundPavan from "../assets/pavan-dec23-2024.wav";
 import { Lyric } from "../newAudioPlayerMachine.ts";
 
 export const outline = [
