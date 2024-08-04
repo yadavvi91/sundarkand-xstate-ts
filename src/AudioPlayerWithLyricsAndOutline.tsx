@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
+import { outline } from "./utils/lyrics.ts";
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const [state, send] = useMachine(audioPlayerMachine);
@@ -260,7 +261,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
                 (lyric) => lyric.outlineIndex === index,
               );
               if (firstLyricOfOutline) {
-                send({ type: "SEEK", position: firstLyricOfOutline.time });
+                send({ type: "seek", position: firstLyricOfOutline.time });
                 if (audioRef.current) {
                   audioRef.current.currentTime = firstLyricOfOutline.time;
                 }

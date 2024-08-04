@@ -34,6 +34,7 @@ type AudioPlayerContext = {
   isManualScrolling: boolean;
   scrollTimeout: number | null;
   lyrics: Lyric[];
+  outline: string[];
   scrollActor: ActorRefFrom<typeof scrollMachine> | null;
   lyricActor: ActorRefFrom<typeof lyricMachine> | null;
 };
