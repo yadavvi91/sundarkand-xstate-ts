@@ -11,9 +11,12 @@ import {
 } from "lucide-react";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
+import { createBrowserInspector } from "@statelyai/inspect";
+
+const { inspect } = createBrowserInspector();
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
-  const [state, send] = useMachine(audioPlayerMachine);
+  const [state, send] = useMachine(audioPlayerMachine, { inspect });
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
