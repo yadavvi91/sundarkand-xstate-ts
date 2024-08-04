@@ -1,4 +1,4 @@
-import { createMachine, assign, spawn, ActorRefFrom, setup } from "xstate";
+import { createMachine, assign, ActorRefFrom, setup } from "xstate";
 import { lyricsVikesh, outline } from "./utils/lyrics.ts";
 
 type AudioPlayerEvent =
@@ -112,7 +112,7 @@ export const audioPlayerMachine = setup({
     events: AudioPlayerEvent;
   },
   actions: {
-    spawnActors: ({ context, event }, params) => {
+    spawnActors: ({ context, event, spawn }, params) => {
       context.scrollActor = spawn(scrollMachine);
       context.lyricActor = spawn(lyricMachine);
     },
