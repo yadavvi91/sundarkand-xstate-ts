@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
-import { outline } from "./utils/lyrics.ts";
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const [state, send] = useMachine(audioPlayerMachine);
@@ -347,27 +346,38 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <button className="text-gray-600 hover:text-gray-800">
+            <button
+              className="text-gray-600 hover:text-gray-800"
+              onClick={handleBackward}
+            >
               <SkipBack size={20} />
             </button>
             <button
               onClick={togglePlayPause}
               className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
             >
-              {state.matches("playing") ? (
+              {state.matches({ "audio playing states": "playingAudio" }) ? (
                 <Pause size={20} />
               ) : (
                 <Play size={20} />
               )}
             </button>
-            <button className="text-gray-600 hover:text-gray-800">
+            <button
+              className="text-gray-600 hover:text-gray-800"
+              onClick={handleForward}
+            >
               <SkipForward size={20} />
             </button>
             <button
-              onClick={toggleMute}
+              onClick={() =>
+                send({
+                  type: "change_volume",
+                  volume: state.context.volume === 0 ? 1 : 0,
+                })
+              }
               className="text-gray-600 hover:text-gray-800"
             >
-              {state.context.isMuted ? (
+              {state.context.volume === 0 ? (
                 <VolumeX size={20} />
               ) : (
                 <Volume2 size={20} />
@@ -378,7 +388,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               min="0"
               max="1"
               step="0.01"
-              value={state.context.isMuted ? 0 : state.context.volume}
+              value={state.context.volume}
               onChange={(event) => handleVolumeChange(event)}
               className="w-20"
             />
@@ -388,6 +398,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             src={soundPavan}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
+            onEnded={() => send({ type: "pause" })}
           />
         </div>
       </div>
