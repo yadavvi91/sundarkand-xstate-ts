@@ -1,5 +1,6 @@
 import { createMachine, assign, ActorRefFrom, setup } from "xstate";
 import { lyricsVikesh, outline } from "./utils/lyrics.ts";
+import { send } from "vite";
 
 type AudioPlayerEvent =
   | { type: "data_loading_started" }
@@ -112,15 +113,19 @@ export const audioPlayerMachine = setup({
     events: AudioPlayerEvent;
   },
   actions: {
-    spawnActors: ({ context, event, spawn }, params) => {
-      context.scrollActor = spawn(scrollMachine);
-      context.lyricActor = spawn(lyricMachine);
-    },
+    // spawnActors: ({ spawn, context, event }, params) => {
+    //   context.scrollActor = spawn(scrollMachine);
+    //   context.lyricActor = spawn(lyricMachine);
+    // },
     showDataLoadedToast: ({ context, event }) => {
       console.log("Data loaded toast", context, event);
     },
     showStartPlayingToast: ({ context, event }) => {
       console.log("Start playing toast", context, event);
+    },
+    startPlayingSundarKand: ({ context, event }) => {
+      console.log("Start Playing Sundarkand", context, event);
+      // send({ type: "play_audio" });
     },
     showForwardingToast: ({ context, event }) => {
       console.log("Show forwarding toast", context, event);
@@ -211,20 +216,33 @@ export const audioPlayerMachine = setup({
     noData: {
       on: {
         data_loading_started: "dataLoading",
+        data_loaded: {
+          target: "dataCompletelyLoaded",
+          actions: assign({
+            scrollActor: ({ spawn }) => spawn(scrollMachine),
+            lyricActor: ({ spawn }) => spawn(lyricMachine),
+          }),
+        },
       },
     },
     dataLoading: {
-      on: {
-        data_loaded: {
-          target: "dataCompletelyLoaded",
-          actions: { type: "spawnActors" },
-        },
-      },
+      // on: {
+      //   data_loaded: {
+      //     target: "dataCompletelyLoaded",
+      //     actions: { type: "spawnActors" },
+      //   },
+      // },
     },
     dataCompletelyLoaded: {
       entry: [
         { type: "showDataLoadedToast", params: { msg: "Data loaded" } },
         { type: "showStartPlayingToast", params: { msg: "Start playing" } },
+      ],
+      exit: [
+        {
+          type: "startPlayingSundarKand",
+          params: { msg: "Playing Sundarkand" },
+        },
       ],
       on: {
         play_audio: "playingSundarkand",
