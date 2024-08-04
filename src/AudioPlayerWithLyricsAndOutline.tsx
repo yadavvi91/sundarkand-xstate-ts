@@ -289,16 +289,13 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
 
   const handleTimeUpdate = () => {
     send({
-      type: "TIME_UPDATE",
+      type: "time_update",
       currentTime: audioRef.current?.currentTime || 0,
     });
   };
 
   const handleLoadedMetadata = () => {
-    send({
-      type: "DURATION_SET",
-      duration: audioRef.current?.duration || 0,
-    });
+    send({ type: "data_loaded", duration: audioRef.current?.duration || 0 });
   };
 
   return (

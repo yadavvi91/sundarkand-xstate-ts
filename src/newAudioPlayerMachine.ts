@@ -3,7 +3,7 @@ import { lyricsVikesh, outline } from "./utils/lyrics.ts";
 
 type AudioPlayerEvent =
   | { type: "data_loading_started" }
-  | { type: "data_loaded" }
+  | { type: "data_loaded"; duration: number }
   | { type: "play_audio" }
   | { type: "play_after_pause" }
   | { type: "pause" }
