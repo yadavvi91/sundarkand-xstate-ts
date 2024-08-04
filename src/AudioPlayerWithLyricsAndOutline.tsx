@@ -65,7 +65,9 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const handleFootnoteClick = (
     e: React.MouseEvent<HTMLElement, MouseEvent>,
     footnoteId: number,
-  ) => {};
+  ) => {
+    console.log(e, footnoteId);
+  };
 
   function splitOnSpaceExceptLast(str: string) {
     // Find the last space in the string
@@ -195,6 +197,13 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     }
   };
 
+  function handleLyricClick(index: number, lyric: Lyric) {
+    send({ type: "click_lyric", index });
+    if (audioRef.current) {
+      audioRef.current.currentTime = lyric.time;
+    }
+  }
+
   const renderLyrics = () => {
     let currentSection = 0;
     return (
@@ -220,12 +229,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               key={index}
               className={`text-lg cursor-pointer flex justify-center items-center w-full 
                 ${index === state.context.currentLyricIndex ? "bg-yellow-200" : ""}`}
-              onClick={() => {
-                send({ type: "click_lyric", index });
-                if (audioRef.current) {
-                  audioRef.current.currentTime = lyric.time;
-                }
-              }}
+              onClick={() => handleLyricClick(index, lyric)}
             >
               {renderLyric(lyric, index)}
             </div>,
