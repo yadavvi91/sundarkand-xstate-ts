@@ -14,14 +14,7 @@ import hanumanji from "./assets/hanumanji.jpg";
 import { outline } from "./utils/lyrics.ts";
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
-  const [state, send] = useMachine(audioPlayerMachine, {
-    setup: ({ context }) => ({
-      context: {
-        ...context,
-        outline: outline,
-      },
-    }),
-  });
+  const [state, send] = useMachine(audioPlayerMachine);
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);

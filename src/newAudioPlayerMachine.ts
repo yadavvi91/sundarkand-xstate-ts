@@ -1,4 +1,5 @@
 import { createMachine, assign, spawn, ActorRefFrom, setup } from "xstate";
+import { lyricsVikesh, outline } from "./utils/lyrics.ts";
 
 type AudioPlayerEvent =
   | { type: "data_loading_started" }
@@ -200,7 +201,8 @@ export const audioPlayerMachine = setup({
     volume: 1,
     isManualScrolling: false,
     scrollTimeout: null,
-    lyrics: [],
+    lyrics: lyricsVikesh,
+    outline: outline,
     scrollActor: null,
     lyricActor: null,
   },

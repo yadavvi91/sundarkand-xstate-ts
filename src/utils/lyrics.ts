@@ -1,5 +1,6 @@
 // import soundVikesh from "./assets/vikesh-june15-2024.wav";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
+import { Lyric } from "../newAudioPlayerMachine.ts";
 
 export const outline = [
   "सुंदरकांड",
@@ -239,7 +240,7 @@ export const lyricsPavan = [
   { time: 1220, type: "samput", text: "पवनतनय संतन हितकारी । हृदय बिराजत अवध बिहारी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
   { time: 1229, type: "samput", text: "मंगल भवन अमंगल हारी । उमा सहित जेहि जपत पुरारी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
   { time: 1244, type: "samput", text: "बोलो सिया बर रामचंद्र की जय ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] }
-];
+] as Lyric[];
 
 export const lyricsVikesh = [
   { type: "doha", time: 0, text: "निमिष निमिष करुनानिधि जाहिं कलप सम बीति ।", outlineIndex: 5, footnoteIds: [ 5 ] },
@@ -279,4 +280,4 @@ export const lyricsVikesh = [
   { type: "chaupai", time: 423, text: "अब बिलंबु केहि कारन कीजे । तुरत कपिन्ह कहुँ आयसु दीजे ॥", outlineIndex: 14, footnoteIds: [ 14 ] },
   { type: "chaupai", time: 430, text: "कौतुक देखि सुमन बहु बरषी । नभ तें भवन चले सुर हरषी ॥", outlineIndex: 14, footnoteIds: [ 14 ] },
   { type: "samput", time: 443, text: "मंगल भवन अमंगल हारी । द्ररबहु सुदसरथ अजिर बिहारी ॥", outlineIndex: 14, footnoteIds: [ 14 ] },
-];
+] as Lyric[];
