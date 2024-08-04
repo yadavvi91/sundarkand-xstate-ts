@@ -205,15 +205,18 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   }
 
   const renderLyrics = () => {
-    let currentSection = 0;
+    let currentOutline = 0;
     return (
       <div className="w-full flex flex-col items-center">
         {state.context.lyrics.reduce((acc, lyric, index) => {
-          if (lyric.outlineIndex !== currentSection) {
-            currentSection = lyric.outlineIndex;
+          // we first add an outline <div>
+          // and then *inside* this <div> we add list of <div>s for lyrics with props.children.push()
+          if (lyric.outlineIndex !== currentOutline) {
+            currentOutline = lyric.outlineIndex;
             acc.push(
               <div
-                key={`section-${lyric.outlineIndex}`}
+                key={`outline-${lyric.outlineIndex}`}
+                id={`outline-${lyric.outlineIndex}`}
                 className={`w-full mb-4 p-2 ${
                   lyric.outlineIndex === state.context.currentOutlineIndex
                     ? "bg-blue-100"
@@ -240,7 +243,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
-  const renderOutline = (outline) => {
+  const renderOutline = (outline: string[]) => {
     return (
       <div
         ref={outlineContainerRef}
