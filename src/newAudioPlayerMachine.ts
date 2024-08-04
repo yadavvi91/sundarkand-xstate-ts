@@ -16,7 +16,7 @@ type AudioPlayerEvent =
   | { type: "manual_scroll" }
   | { type: "change_volume"; volume: number };
 
-interface Lyric {
+export interface Lyric {
   time: number;
   type: "chaupai" | "samput" | "doha" | "sortha" | "chhand";
   text: string;

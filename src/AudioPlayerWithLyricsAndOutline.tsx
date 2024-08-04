@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { useMachine } from "@xstate/react";
-import { audioPlayerMachine } from "./newAudioPlayerMachine.ts"; // Assume this is imported from your machine file
+import { audioPlayerMachine, Lyric } from "./newAudioPlayerMachine.ts"; // Assume this is imported from your machine file
 import {
   Play,
   Pause,
@@ -21,11 +21,10 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const outlineContainerRef = useRef<HTMLDivElement>(null);
 
   const togglePlayPause = () => {
-    send(state.matches("playing") ? "PAUSE" : "PLAY");
-    if (audioRef.current) {
-      state.matches("playing")
-        ? audioRef.current.pause()
-        : audioRef.current.play();
+    if (state.matches({ "audio playing states": "playingAudio" })) {
+      send({ type: "pause" });
+    } else {
+      send({ type: "play_after_pause" });
     }
   };
 
@@ -38,27 +37,162 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       progressBar.offsetWidth;
     const newTime = clickPosition * state.context.duration;
 
-    send({ type: "SEEK", position: newTime });
+    send({ type: "seek", position: newTime });
     audioRef.current.currentTime = newTime;
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
-    send({ type: "CHANGE_VOLUME", volume: newVolume });
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
+    send({ type: "change_volume", volume: newVolume });
   };
 
-  const toggleMute = () => {
-    send("TOGGLE_MUTE");
-    if (audioRef.current) {
-      audioRef.current.muted = !state.context.isMuted;
-    }
+  const handleForward = () => {
+    send({ type: "forward" });
   };
 
-  const renderLyric = (lyric, index) => {
-    // Implementation remains the same as in your original code
+  const handleBackward = () => {
+    send({ type: "backward" });
+  };
+
+  const isFirstOccurrence = (footnoteId: number, currentIndex: number) => {
+    return (
+      state.context.lyrics.findIndex((lyric) =>
+        lyric.footnoteIds.includes(footnoteId),
+      ) === currentIndex
+    );
+  };
+
+  const handleFootnoteClick = (
+    e: React.MouseEvent<HTMLElement, MouseEvent>,
+    footnoteId: number,
+  ) => {};
+
+  function splitOnSpaceExceptLast(str: string) {
+    // Find the last space in the string
+    const secondLastSpaceIndex = str.lastIndexOf(" ");
+
+    // If there's no space or only one space, return the string as the only element in an array
+    if (secondLastSpaceIndex === -1) {
+      return [str];
+    }
+
+    // Find the second-to-last space in the string
+    const lastSpaceIndex = str.lastIndexOf(" ", secondLastSpaceIndex - 1);
+
+    // Split the string into two parts: before the last space and after
+    const beforeLastSpace = str.slice(0, lastSpaceIndex);
+    const afterLastSpace = str.slice(lastSpaceIndex + 1);
+
+    // Split the part before the last space on spaces
+    const splitBeforeLastSpace = beforeLastSpace.split(" ");
+
+    // Combine the two parts
+    return [...splitBeforeLastSpace, afterLastSpace];
+  }
+
+  const renderLyric = (lyric: Lyric, index: number) => {
+    const footnoteIds = lyric.footnoteIds.reduce(
+      (acc: number[], footnoteId: number, i: number) => {
+        if (isFirstOccurrence(footnoteId, index)) {
+          acc.push(footnoteId);
+        }
+        return acc;
+      },
+      [],
+    );
+    const footnoteIndicator =
+      footnoteIds && footnoteIds.length > 0 ? (
+        <div className="flex items-center">
+          {footnoteIds.map((noteId) => (
+            <sup
+              key={`notedId-${noteId}`}
+              className="text-blue-500 cursor-pointer ml-1"
+              onClick={(e) => handleFootnoteClick(e, noteId)}
+            >
+              [{noteId}]
+            </sup>
+          ))}
+        </div>
+      ) : null;
+
+    if (lyric.type === "doha" || lyric.type === "sortha") {
+      const pattern = /॥\d+॥/;
+      const isLine2 = pattern.test(lyric.text);
+      return (
+        <div className="flex items-center">
+          <p
+            className="flex justify-between w-full px-2"
+            style={{ width: isLine2 ? "400px" : "370px" }}
+          >
+            {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
+              <span key={i}>{word}</span>
+            ))}
+          </p>
+          <div className="w-[20px]">
+            {" "}
+            {/* Fixed width container for footnote */}
+            {footnoteIndicator}
+          </div>
+        </div>
+      );
+    }
+    //
+    else if (lyric.type === "samput") {
+      const midPoint = lyric.text.indexOf("।");
+      const firstPart = lyric.text.slice(0, midPoint + 1);
+      const secondPart = lyric.text.slice(midPoint + 1) + "  ";
+      return (
+        <div className="flex items-center">
+          <div
+            className="flex w-full px-2 italic text-gray-600 font-bold"
+            style={{ width: "500px" }}
+          >
+            <p className="w-[245px] flex justify-between">
+              {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                <span key={i}>{word}</span>
+              ))}
+            </p>
+            <p className="w-[255px] flex justify-between pl-2">
+              {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                <span key={i}>{word}</span>
+              ))}
+            </p>
+          </div>
+          <div className="w-[20px]">
+            {" "}
+            {/* Fixed width container for footnote */}
+            {footnoteIndicator}
+          </div>
+        </div>
+      );
+    }
+    //
+    else {
+      const midPoint = lyric.text.indexOf("।");
+      const firstPart = lyric.text.slice(0, midPoint + 1);
+      const secondPart = lyric.text.slice(midPoint + 1) + "  ";
+      return (
+        <div className="flex items-center style={{ minHeight: '2em' }}">
+          <div className="flex w-full px-2" style={{ width: "500px" }}>
+            <p className="w-[245px] flex justify-between">
+              {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                <span key={i}>{word}</span>
+              ))}
+            </p>
+            <p className="w-[255px] flex justify-between pl-2">
+              {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                <span key={i}>{word}</span>
+              ))}
+            </p>
+          </div>
+          <div className="w-[20px]">
+            {" "}
+            {/* Fixed width container for footnote */}
+            {footnoteIndicator}
+          </div>
+        </div>
+      );
+    }
   };
 
   const renderLyrics = () => {
@@ -87,7 +221,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               className={`text-lg cursor-pointer flex justify-center items-center w-full 
                 ${index === state.context.currentLyricIndex ? "bg-yellow-200" : ""}`}
               onClick={() => {
-                send({ type: "CLICK_LYRIC", index });
+                send({ type: "click_lyric", index });
                 if (audioRef.current) {
                   audioRef.current.currentTime = lyric.time;
                 }
@@ -97,7 +231,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             </div>,
           );
           return acc;
-        }, [])}
+        }, [] as React.ReactElement[])}
       </div>
     );
   };
@@ -143,7 +277,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         <div
           className="flex-grow p-8 overflow-y-auto flex flex-col items-center"
           ref={lyricsContainerRef}
-          onScroll={() => send("MANUAL_SCROLL")}
+          onScroll={() => send({ type: "manual_scroll" })}
         >
           <div className="w-full max-w-[1000px]">
             <h2 className="text-4xl font-bold mb-8 text-center w-full">
