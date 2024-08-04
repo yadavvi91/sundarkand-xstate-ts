@@ -123,10 +123,10 @@ export const audioPlayerMachine = setup({
     showStartPlayingToast: ({ context, event }) => {
       console.log("Start playing toast", context, event);
     },
-    startPlayingSundarKand: ({ context, event }) => {
-      console.log("Start Playing Sundarkand", context, event);
-      // send({ type: "play_audio" });
-    },
+    // startPlayingSundarKand: ({ context, event }) => {
+    //   console.log("Start Playing Sundarkand", context, event);
+    //   // send({ type: "play_audio" });
+    // },
     showForwardingToast: ({ context, event }) => {
       console.log("Show forwarding toast", context, event);
     },
@@ -238,12 +238,15 @@ export const audioPlayerMachine = setup({
         { type: "showDataLoadedToast", params: { msg: "Data loaded" } },
         { type: "showStartPlayingToast", params: { msg: "Start playing" } },
       ],
-      exit: [
-        {
-          type: "startPlayingSundarKand",
-          params: { msg: "Playing Sundarkand" },
-        },
-      ],
+      // exit: [
+      //   {
+      //     type: "startPlayingSundarKand",
+      //     params: { msg: "Playing Sundarkand" },
+      //   },
+      // ],
+      after: {
+        100: "playingSundarkand", // Alternative 1: Automatic transition
+      },
       on: {
         play_audio: "playingSundarkand",
       },
