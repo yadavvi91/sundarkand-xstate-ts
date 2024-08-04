@@ -204,11 +204,11 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     }
   }
 
-  const renderLyrics = () => {
+  const renderLyrics = (lyrics: Lyric[]) => {
     let currentOutline = 0;
     return (
       <div className="w-full flex flex-col items-center">
-        {state.context.lyrics.reduce((acc, lyric, index) => {
+        {lyrics.reduce((acc, lyric, index) => {
           // we first add an outline <div>
           // and then *inside* this <div> we add list of <div>s for lyrics with props.children.push()
           if (lyric.outlineIndex !== currentOutline) {
@@ -298,7 +298,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             <h2 className="text-4xl font-bold mb-8 text-center w-full">
               सुंदरकाण्‍‍ड़
             </h2>
-            {renderLyrics()}
+            {renderLyrics(state.context.lyrics)}
           </div>
         </div>
         <div className="w-[400px] bg-white p-8 flex flex-col justify-end border-l border-gray-200">
