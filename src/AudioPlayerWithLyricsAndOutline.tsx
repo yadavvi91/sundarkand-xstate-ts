@@ -243,6 +243,18 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
+  function handleOutlineClick(index: number) {
+    const firstLyricOfOutline = state.context.lyrics.find(
+      (lyric) => lyric.outlineIndex === index,
+    );
+    if (firstLyricOfOutline) {
+      send({ type: "seek", position: firstLyricOfOutline.time });
+      if (audioRef.current) {
+        audioRef.current.currentTime = firstLyricOfOutline.time;
+      }
+    }
+  }
+
   const renderOutline = (outline: string[]) => {
     return (
       <div
@@ -258,17 +270,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
                 ? "bg-blue-100"
                 : "hover:bg-gray-200"
             }`}
-            onClick={() => {
-              const firstLyricOfOutline = state.context.lyrics.find(
-                (lyric) => lyric.outlineIndex === index,
-              );
-              if (firstLyricOfOutline) {
-                send({ type: "seek", position: firstLyricOfOutline.time });
-                if (audioRef.current) {
-                  audioRef.current.currentTime = firstLyricOfOutline.time;
-                }
-              }
-            }}
+            onClick={() => handleOutlineClick(index)}
           >
             {item}
           </div>
