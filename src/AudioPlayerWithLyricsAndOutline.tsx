@@ -285,6 +285,20 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const handleTimeUpdate = () => {
+    send({
+      type: "TIME_UPDATE",
+      currentTime: audioRef.current?.currentTime || 0,
+    });
+  };
+
+  const handleLoadedMetadata = () => {
+    send({
+      type: "DURATION_SET",
+      duration: audioRef.current?.duration || 0,
+    });
+  };
+
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 absolute inset-0">
       <div className="flex w-full max-w-[1600px]">
@@ -318,7 +332,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             <div
               ref={progressRef}
               className="h-2 bg-gray-300 rounded-full cursor-pointer"
-              onClick={handleProgressClick}
+              onClick={(event) => handleProgressClick(event)}
             >
               <div
                 className="h-full bg-blue-500 rounded-full"
@@ -365,25 +379,15 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               max="1"
               step="0.01"
               value={state.context.isMuted ? 0 : state.context.volume}
-              onChange={handleVolumeChange}
+              onChange={(event) => handleVolumeChange(event)}
               className="w-20"
             />
           </div>
           <audio
             ref={audioRef}
             src={soundPavan}
-            onTimeUpdate={() =>
-              send({
-                type: "TIME_UPDATE",
-                currentTime: audioRef.current?.currentTime || 0,
-              })
-            }
-            onLoadedMetadata={() =>
-              send({
-                type: "DURATION_SET",
-                duration: audioRef.current?.duration || 0,
-              })
-            }
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
           />
         </div>
       </div>
