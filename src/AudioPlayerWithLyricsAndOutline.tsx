@@ -23,7 +23,11 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const outlineContainerRef = useRef<HTMLDivElement>(null);
 
   const togglePlayPause = () => {
-    if (state.matches({ "audio playing states": "playingAudio" })) {
+    if (
+      state.matches({
+        playingSundarkand: { "audio playing states": "playingAudio" },
+      })
+    ) {
       send({ type: "pause" });
     } else {
       send({ type: "play_after_pause" });
@@ -356,7 +360,9 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               onClick={togglePlayPause}
               className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
             >
-              {state.matches({ "audio playing states": "playingAudio" }) ? (
+              {state.matches({
+                playingSundarkand: { "audio playing states": "playingAudio" },
+              }) ? (
                 <Pause size={20} />
               ) : (
                 <Play size={20} />
