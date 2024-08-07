@@ -95,6 +95,7 @@ const lyricMachine = setup({
   types: {} as {
     context: LyricMachineContext;
     events: LyricMachineEvent;
+    emitted: { type: "lyric_update"; index: number; outlineIndex: number };
   },
   actions: {
     updateLyricIndices: ({ context, event }) => {
@@ -103,25 +104,22 @@ const lyricMachine = setup({
         context.currentOutlineIndex = event.outlineIndex;
       }
     },
-    // notifyParent: ({ context, event }) => {
-    //   // emit({
-    //   //   type: "lyric_update",
-    //   //   index: context.currentLyricIndex,
-    //   //   outlineIndex: context.currentOutlineIndex,
-    //   // });
-    //   sendTo(({ event }) => event.sender, {
+    // notifyParent: sendTo("audioPlayer", ({ context, event }) => {
+    //   return {
     //     type: "lyric_update",
     //     index: context.currentLyricIndex,
     //     outlineIndex: context.currentOutlineIndex,
-    //   });
-    // },
-    notifyParent: sendTo("audioPlayer", ({ context, event }) => {
-      return {
-        type: "lyric_update",
-        index: context.currentLyricIndex,
-        outlineIndex: context.currentOutlineIndex,
-      };
-    }),
+    //   };
+    // }),
+    emitLyricUpdate: ({ context, event, emit }) => {
+      if (event.type === "UPDATE") {
+        emit({
+          type: "lyric_update",
+          index: context.currentLyricIndex,
+          outlineIndex: context.currentOutlineIndex,
+        });
+      }
+    },
   },
 }).createMachine({
   id: "lyricMachine",
@@ -131,7 +129,8 @@ const lyricMachine = setup({
     idle: {
       on: {
         UPDATE: {
-          actions: ["updateLyricIndices", "notifyParent"],
+          // actions: ["updateLyricIndices", "notifyParent"],
+          actions: ["updateLyricIndices", "emitLyricUpdate"],
         },
       },
     },
@@ -203,29 +202,48 @@ export const audioPlayerMachine = setup({
       // Logic to scroll to the current lyric
       console.log("Scrolling to lyric index:", context.currentLyricIndex);
     },
-    updateTimeAndLyric: sendTo("lyricMachine", ({ context, self }) => {
-      const newLyricIndex = findLyricIndex(
-        context.lyrics,
-        context.currentPosition,
-      );
-      const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
-
-      return {
-        type: "UPDATE",
-        index: newLyricIndex,
-        outlineIndex: newOutlineIndex,
-      };
-    }),
-    handleLyricClick: ({ context, event }) => {
-      if (event.type === "click_lyric") {
-        const newOutlineIndex = findOutlineIndex(context.lyrics, event.index);
-        context.lyricActor?.send({
-          type: "UPDATE",
-          index: event.index,
-          outlineIndex: newOutlineIndex,
-        });
-      }
+    // updateTimeAndLyric: sendTo("lyricMachine", ({ context, self }) => {
+    //   const newLyricIndex = findLyricIndex(
+    //     context.lyrics,
+    //     context.currentPosition,
+    //   );
+    //   const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
+    //
+    //   return {
+    //     type: "UPDATE",
+    //     index: newLyricIndex,
+    //     outlineIndex: newOutlineIndex,
+    //   };
+    // }),
+    updateTimeAndLyric: ({ context, event }) => {
+      console.log(`updateTimeAndLyric: ${event}`);
     },
+    // handleLyricClick: ({ context, event }) => {
+    //   if (event.type === "click_lyric") {
+    //     const newOutlineIndex = findOutlineIndex(context.lyrics, event.index);
+    //     context.lyricActor?.send({
+    //       type: "UPDATE",
+    //       index: event.index,
+    //       outlineIndex: newOutlineIndex,
+    //     });
+    //   }
+    // },
+    handleLyricClick: sendTo(
+      (context) => context.context.lyricActor,
+      (context) => {
+        if (context.event?.type === "click_lyric") {
+          return {
+            type: "UPDATE",
+            index: context.event?.index,
+            outlineIndex: findOutlineIndex(
+              context.context.lyrics,
+              context.event?.index,
+            ),
+          };
+        }
+        return { type: "NOOP" };
+      },
+    ),
     triggerManualScroll: ({ context }) => {
       context.scrollActor?.send({ type: "SCROLL" });
     },
@@ -263,7 +281,11 @@ export const audioPlayerMachine = setup({
           actions: [
             assign({
               scrollActor: ({ spawn }) => spawn(scrollMachine),
-              lyricActor: ({ spawn }) => spawn(lyricMachine),
+              lyricActor: ({ spawn }) =>
+                spawn(lyricMachine, {
+                  id: "lyricMachine",
+                  systemId: "lyricMachine",
+                }),
             }),
             { type: "setDuration" },
           ],
