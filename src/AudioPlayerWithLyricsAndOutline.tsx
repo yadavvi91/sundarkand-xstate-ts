@@ -23,13 +23,16 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const outlineContainerRef = useRef<HTMLDivElement>(null);
 
   const togglePlayPause = () => {
+    const audio = audioRef.current;
     if (
       state.matches({
         playingSundarkand: { "audio playing states": "playingAudio" },
       })
     ) {
+      audio?.pause();
       send({ type: "pause" });
     } else {
+      audio?.play();
       send({ type: "play_after_pause" });
     }
   };
