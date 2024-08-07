@@ -215,7 +215,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   }
 
   const renderLyrics = (lyrics: Lyric[]) => {
-    let currentOutline = 0;
+    let currentOutline = state.context.currentOutlineIndex;
     return (
       <div className="w-full flex flex-col items-center">
         {lyrics.reduce((acc, lyric, index) => {

@@ -1,5 +1,5 @@
-import { createMachine, assign, ActorRefFrom, setup } from "xstate";
-import { lyricsVikesh, outline } from "./utils/lyrics.ts";
+import { createMachine, assign, ActorRefFrom, setup, emit } from "xstate";
+import { lyricsPavan, lyricsVikesh, outline } from "./utils/lyrics.ts";
 import { send } from "vite";
 
 type AudioPlayerEvent =
@@ -15,6 +15,7 @@ type AudioPlayerEvent =
   | { type: "seek_failed" }
   | { type: "time_update"; currentTime: number }
   | { type: "click_lyric"; index: number }
+  | { type: "lyric_update"; index: number; outlineIndex: number }
   | { type: "manual_scroll" }
   | { type: "change_volume"; volume: number };
 
@@ -91,6 +92,13 @@ const lyricMachine = setup({
         context.currentOutlineIndex = event.outlineIndex;
       }
     },
+    notifyParent: ({ context, event }) => {
+      emit({
+        type: "lyric_update",
+        index: context.currentLyricIndex,
+        outlineIndex: context.currentOutlineIndex,
+      });
+    },
   },
 }).createMachine({
   id: "lyric",
@@ -100,7 +108,7 @@ const lyricMachine = setup({
     idle: {
       on: {
         UPDATE: {
-          actions: "updateLyricIndices",
+          actions: ["updateLyricIndices", "notifyParent"],
         },
       },
     },
@@ -198,9 +206,15 @@ export const audioPlayerMachine = setup({
     triggerManualScroll: ({ context }) => {
       context.scrollActor?.send({ type: "SCROLL" });
     },
+    updateLyricIndices: ({ context, event }) => {
+      if (event.type === "lyric_update") {
+        context.currentLyricIndex = event.index;
+        context.currentOutlineIndex = event.outlineIndex;
+      }
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEMCuECWB7ACgG2QE8wAnAOgDssARZAF2QGIJ7kB9PLZTCqN2BiTqQA2gAYAuolAAHLLAx1sFaSAAeiAIwAWABxkxAdl2aATAFYANCEKITZc2Kfax5zQDYAnGO3aAvn7WaJi4BMTkLAwAMlw8UMysHLGikqpyCkpYKkjqiOam1rYIAMzm7gamxdrGYh7evgFB6Nj4RKRkkcgAwlgAtjJ4YMJ4hDHckIwDRGzB2OJSOemKyqoaCPmFWqYeZKYmpWaepqbumo0gs6Ft5FOEGLwAyqgULCQA1sgvZJcABLf3UB+AnocDI-14AEFmlhJmhYGB5ml5MssqtENVzGRDGJimYrDYtDjytpzMVTNp3OZHIZNGTzpdWuEwWEAU8Xsh3p8IN9oX8WbwgQxhLBmUQAVCQowAGZYEgAdw5EERi2RmWyoDWul0pgMFN0hnxRU8lLImkMnl0Ym81Nppnp0MZ7XBUDZrw+X1+zsFIJFzol2EYACNkABjN4KkhK1IqjIrHKao669z6w2IQyGHWmQylczWoy2+0hR03fku55urk8kJ8sUC4HC0V3SHQxjwsBvZWyVVxjV2bVJlObBAeU4OdzGbEuK2OXSFlphJ2l10c93cz2l70Nv0tpS9MBsVAySII6Nd2Oo+OICyaMjFHzJg1DzS1cruO9ki26FwU-yBC4OhcS1rMt2U5D1eS9etQW3SUQwAC0+GA2AANywPBUD3TsQCWNU0QQE5il2IwcTxIcjjEU101MHwtW-dxfyaItAMbVlyxXSt12AzdoLhSB-RhW4ZilYQSDYGReKwnCe1yBAMSxEiLDI3RMU8UlyUpG06T-BlmOdZcwLXCCNyg31eIgfjpVlCMowWM8UXVGTvB1e9BwJYcxFHN9TE8KpXHzLTGPna4WMeNiDKrbAaybQETLBMyLODMNrMk7sL17BBdETFzHzc3RkyxE5kxcTS7W0gDgr0sLVwirAooBbjTNQeFzJbNsO1PbDUochNnL1HKig8TQbw8icfCcVSxFnMqmIqpcqo4oyuNi8Smr4lt4MQ-dUPQzCOqktKZMpYlSVItyfP0Jxam2Kl-NKwKriZSrQOq2A4KwOUooAWhW+EfjoLgBDIOCMAgCAwAoSz5UVFLz26rZ8qpPrU2HTRzEMMhVLJCkbppAL-xmx65ueytXver6frAP6AboIGQbBiHEvDaG9q6vCzAR8wkafVxPAxtTsZKucHsXYD9Jet6Ptub7eKp5BAdJuUAQAMSsxUABVqch5KWdhtmSW0Axim8dxFLcobtEIg0rtRwXpqCwnRfmr4FfJmX-rlmmFeV1XIw1j3GDUKDvmE0gAApHDEABKRgdNmx3iediXXdW2X5Yl72od96mYfstmTn0RGH2RobnzIEksY026heLEKQIrROyalinU899PeAAIVDJms-9xntdszrdcvYd9dvQvXKNHwsUcMwbaru3haA6KxZJpOm7d6myC9juu+sv2BADoPkBDkhw6caPY4d5ene5F315T920-egFO6S9Xs513Ph-ZgvOaL7mzBl35pXXGd18b2xFtfBOt8k5tRbmQEGgxWxgHbDnXC38XA6lKD5fqWhqjlGomSfUI1TiGHcNXXSRN64wLJnAx+nsUFvABMg9sbAQx9AGEME8A99pw2HHsfQhhtDbAnloE2hFUb0TMCQs05CF41yetQresDGHwLaswtqbApTIAwIMGySIh7pTMFqLEwjNCiOHPkco2IiHYnHKQuR90FFUPYl8EYJAMAhh+PcESoY1QIIgEgkMeBPFvA4IQDxIY0HSTWNeW82Vi5G15noTwk5aL3gYuAxetcV5uIiZ47xFBfEhn8YgsAjBeifFQMgPA-AQwkDQngaJB1YmkkNqdAa75DaUnNOkn8AQ-xUDBvAHIl9SAGK-ulT67ghzTIocFKgtAGATPQelYRQ5+yXTGm4LwPhMljIiKwMYcQVkxMQMUeiZcvzFFwRlZyl1ip1D2fMpknQej9EGMMUYyQICnJaVeHEZALFVEIlsx5uyGjyMofHahfy+E23iVzNyRUsTZjcMpYoxRLRaheZA1i0Cap1TrEKOAcK8KEMRf-XKZIyDjhpPRC5NJhG4qXvipRnFooNVrvxMlw8syER8tgm5xcdCYiJGjT8dF9nlSvmy1xhlqyQRJY1ZqPKYyTMOu4V845jQWOfEbIBFccYFihXHKBSi75hGlg-amvKjHPhvMjEw6MLBOBMDiLFk0ppOOhea+VyjG5WubvQ2moNwZ2pkubXmIqp76vUsazFLKck3wDZLING8PapoznvW16rVmRuEQbcwykcHF3JJiQh8bbY+rNXK8KlqiDWt+iG7eUBX7dwgPvOgEa1g6HJA4EtwruYeSIka6tWTnEwv9S7Ohua7L5rWKk18tQyim06SYmxVb541tlaFAlM7VEhrKT2vBnheaeB0B5NdWgqQ6h1V+VS9jZFJsUdOlR7Y1GMIBCe9y-b3ArpNsXXMBs9DlzsWQ59prd1139e4gpPjSB+Okrw8lgK7xIoGtdBwFyJV9Poi+lx4U4NeIQyQJDWQAmDB-XeTE1QTirqA5zIF2hvC9K-BkgZfggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEMCuECWB7ACgG2QE8wAnAOgDssARZAF2QGIJ7kB9PLZTCqN2BiTqQA2gAYAuolAAHLLAx1sFaSAAeiAIwAWABxkxAdl2axugEyGrYgKyWANCEKITZG2I86AzAE5NNn21fAF9gxzRMXAJicipaBmZWDi4IUUlVOQUlLBUkdS09A2NTCytDWwcnArEDbQA2XV1bPXK6usNQ8PRsfCJSMhYGAGEsAFsZPDBhPEIAGRTIRgmiNgjscSk8zMVlVQ0EO0dnBE1zTS8yP3P3Ly8bXTtNTpA1qL7yQeQR8cnpuYWIIw1AJ6GAyMgAGbCEgAClMYgAlIxXr0YgNWN8JlMwDN5tw0ptZPIdjk9og6uYji5tDVbIZzNpLOY7uYfHVnijov1loQMLwAMqoCgsEgAa2QwvB3SwAAIeXyoDKQcJYGR5bwAILSpZoWBgDYZYnZXKgfZ6Go2cq3YxeM7aHyGKkIXT1Mg0uqaHwmLyGbQ2W4c6Wo7nRBWC4XIMUSiBSyJy0O8JUMFVqhNQLWRRgQrAkADukYgBq2Rt2eX2jTqlx0YjZvhsdUeTqsNjI53MDwsARr5nMgciwfI6qg4ZF4slr3jRAVSdBqqHGewjAARsgAMai-MkQvpYtZUumlxsqs02s+euNqoHCxkHsN+usu7+p5hF5BrmDtMjyNjmMToczlN521PUwFFIsiT3UkyxcXRKz8E86jrBszidHRDE0NxzCMDwxHtQwfHbPsenfVMpwFIVR2jWNsEnXlE2VOBSLo9NtSUUYwDYVAZEGfUdwgkkTXyBBzHrVt0N0Hwrkkl1HUvCxK3uW18Mk05GRsIi3jRIcvyjcdpVo6cGLnNMFywRhVwACwlGA2AANywPBUHY8CQG2Y0yWEhoikZbRNDqIxtHw+smy8GpzjETQHkZWDGXZF9OXeJiwwo78qL-NMAMYmRdUgUylmiVYoVINhstQPUXLc-chPNNwrR9XRbR0B0mzPS4xApMRQruM8Ag0gckvIiNdN-fT-yMtUcogPLszzAsKpLKCDwQHx2uPGtELPZDNCdXR0LcB4z3bM46gI7Q+pI7SUuG6jZTG5MssmvKV3XTdt0JVyFsE8sj3g9akIvY52n0do2XcB4PX9OKun7C7Pyun8boM+j7rnR7gLAUD5sgr7Dzg6tT3PFDLx0M4DCw8p7T0Vl7nOxLLqGhH0rIxVxtKvUpu1SzrI4+zHOcviPuxjy2gw21OvKWDwb8ptAsuJ9OstPR-V7eK3zpuGGao2ALKwXNaIAWjZsAZToLgBDICyMAgVIKCzHNXqxgSPNOQwLkZSLfRdQJIadNlDDaj0mhsXzyhrWmtI1yjJW13WDaNk2zboC2rZt5c1w3OaBcqxahJdt2zl2vRKZ9uSToDvy7mMX0QlVmH1eZnSEZjvWeUNnKE+Qc3m4VAAxe2CwAFUTu3Zq3R33Ogk4-X0FaKRWyWC90X3-TIK0XY8KLEPDkMG-hrWdZb6I27K43Tc7pPu94PvR4gIfz6BBjwSK2F3ERZE1Yj3fNejg+4-bs+u4H17v3Lcd8BDjyqvsPOboC6e2Ll4OovssJunav4SWYgGSaGfNDYi9dmKN33rHVu8cAEXyAbwAAQunV6YC6Bpxepnd62ccZTwCDeW8Z5NBWG0Dwykl50LaFXp1Colp6R1D9NvD8X8o4xmbn-E+HdAG6wVFQhhoDh7Anuk-aEMJX5IgSp-fBe8f5EKPiQxOZBL5QFURndR58IE5ygZYfOHsi7ewQTtHsKCKTBxsJaCkhFa64MMclb+sjf4gVFIopOVtJiMEiQ4lh1Z-a3ktLaB8p1ULtkrP4D0aC-YBHUkEzSO8jFhMsREjGUTSGWKqQqeJVS2CrjGFiYQiTnYPjIP5HwtoJKu09MYVCQQLimAIrYesZhLSSIGsOYx4TY6ROibU0C9TIlsAhMgDAkw3qGiFpPU4PSuk1l6Q6LwAyl7E1uJWBseSaxehEu0aZ9MZFkBmCQDAq4ZR8mhGuY0ZBYlgHMngD5ooOCEHeaudpk8HliUiipT0XpApZJrG6WK7V7SSUMA0J5kdUqSjeR8r5FAfmrj+QCxgowJSoGQHgfgq4SAOTwFCpaIl-YSRdCdc4DofHaFQlg8wlwJI2CwT012WK4ovioKkeAeQDGkF2U7Se+tEGXmVdMuIrAFUTyWoyHa+hfJtCaJgl0vgvDTM+HiHgUAtWQMQAgwRRd6pNBpFczxBgcLeD8AEIIPhzUYhab8HE-x8QQBtY4xArIfByzObcPyVgfFDItDhGs9pQp+AbDi6ReLQ27kVUtPyYVxLwukkiy8lNV7mAbOUfluEAzFP6s87NiM7qzjDSwrC+guFwqkoi2SgNGRdNCgihk6FbS+vrbDLN10mbMUysZZmpk20eUsPoJoZgIq7REiYFVxwzyCK9GeUKDYggnTOhOvBoSXkzsMijCaJ8OaRCXZPdoGF-TCtgscmkLodr2m8Z6b0vp-RmvPSEwaLy5HEP-onJ9+bTCVgQfST0dgC5tCdBSFJwi2h1kMMHXQmayngd-pBhRNTLbWzAIJZhzt-CCIQ2cQ6KGd2IHggYesXCRKv3pB0EDpTL1Nog2YqD58KnKKviA2+0Hc3atzoyKNfozmWnauK9qqFxmtnvGcS0WD6hFJwSUqRBH+NEcEyRixVibE0Mk-xaTUDZNuifIp9obQVNyT8upj0gUuUxW43phtuLrpyMWaQmDQkvQYXqIXHQFIT1MZOP+rpbHWToTsPaPDPGDN8YC5U0CSyAUhage4QRxQC6sg9FYVCCCBWIUrf5ekjQzDAd85OwzWWFlVKWZEhU+WtAYLkw0X0UWGQINi9WB1PpfAOhNUEfDmWEYEs+d80gvyqpUehWYWFEke0yVUyJN0QrWV+Ngj518ddQOzPKfNolJKyUQEmN1hAZyai3C9K7Nkph7UjftWQI1EVbSIUQkYUIoQgA */
   id: "audioPlayer",
   context: {
     currentPosition: 0,
@@ -211,7 +225,7 @@ export const audioPlayerMachine = setup({
     volume: 1,
     isManualScrolling: false,
     scrollTimeout: null,
-    lyrics: lyricsVikesh,
+    lyrics: lyricsPavan,
     outline: outline,
     scrollActor: null,
     lyricActor: null,
@@ -408,6 +422,9 @@ export const audioPlayerMachine = setup({
                 },
                 manual_scroll: {
                   actions: "triggerManualScroll",
+                },
+                lyric_update: {
+                  actions: ["updateLyricIndices"],
                 },
               },
             },
