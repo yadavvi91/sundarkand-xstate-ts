@@ -44,6 +44,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     const newTime = clickPosition * state.context.duration;
 
     send({ type: "seek", position: newTime });
+    send({ type: "seek_complete" });
     audioRef.current.currentTime = newTime;
   };
 

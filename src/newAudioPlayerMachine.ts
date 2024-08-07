@@ -369,7 +369,10 @@ export const audioPlayerMachine = setup({
             },
             seeking: {
               entry: [
-                { type: "updateSeekPosition", params: {} },
+                {
+                  type: "updateSeekPosition",
+                  params: { msg: "seeking to a position" },
+                },
                 {
                   type: "showSeekingToast",
                   params: { msg: "Seeking in progress" },
