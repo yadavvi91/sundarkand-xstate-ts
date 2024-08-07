@@ -111,19 +111,21 @@ const lyricMachine = setup({
     //     outlineIndex: context.currentOutlineIndex,
     //   };
     // }),
-    emitLyricUpdate: ({ context, event, emit }) => {
-      if (event.type === "UPDATE") {
-        emit({
-          type: "lyric_update",
-          index: context.currentLyricIndex,
-          outlineIndex: context.currentOutlineIndex,
-        });
-      }
+    emitLyricUpdate: ({ context }) => {
+      context.emitter.emit({
+        type: "lyric_update",
+        index: context.currentLyricIndex,
+        outlineIndex: context.currentOutlineIndex,
+      });
     },
   },
 }).createMachine({
   id: "lyricMachine",
-  context: { currentLyricIndex: 0, currentOutlineIndex: 0 },
+  context: {
+    currentLyricIndex: 0,
+    currentOutlineIndex: 0,
+    emitter: { emit: () => {} }, // This will be replaced by the actual emitter when spawned
+  },
   initial: "idle",
   states: {
     idle: {
