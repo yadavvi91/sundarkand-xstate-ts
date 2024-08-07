@@ -117,6 +117,11 @@ export const audioPlayerMachine = setup({
     //   context.scrollActor = spawn(scrollMachine);
     //   context.lyricActor = spawn(lyricMachine);
     // },
+    setDuration: ({ context, event }) => {
+      if (event.type === "data_loaded") {
+        context.duration = event.duration;
+      }
+    },
     showDataLoadedToast: ({ context, event }) => {
       console.log("Data loaded toast", context, event);
     },
@@ -218,10 +223,13 @@ export const audioPlayerMachine = setup({
         data_loading_started: "dataLoading",
         data_loaded: {
           target: "dataCompletelyLoaded",
-          actions: assign({
-            scrollActor: ({ spawn }) => spawn(scrollMachine),
-            lyricActor: ({ spawn }) => spawn(lyricMachine),
-          }),
+          actions: [
+            assign({
+              scrollActor: ({ spawn }) => spawn(scrollMachine),
+              lyricActor: ({ spawn }) => spawn(lyricMachine),
+            }),
+            { type: "setDuration" },
+          ],
         },
       },
     },
