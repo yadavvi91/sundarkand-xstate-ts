@@ -1,4 +1,11 @@
-import { createMachine, assign, ActorRefFrom, setup, emit } from "xstate";
+import {
+  createMachine,
+  assign,
+  ActorRefFrom,
+  setup,
+  emit,
+  sendTo,
+} from "xstate";
 import { lyricsPavan, lyricsVikesh, outline } from "./utils/lyrics.ts";
 import { send } from "vite";
 
@@ -70,11 +77,15 @@ const scrollMachine = setup({
   },
 });
 
-type LyricMachineEvent = {
-  type: "UPDATE";
-  index: number;
-  outlineIndex: number;
-};
+type LyricMachineEvent =
+  | {
+      type: "UPDATE";
+      index: number;
+      outlineIndex: number;
+    }
+  | { type: "data_loading_started" }
+  | { type: "data_loaded"; duration: number }
+  | { type: "play_audio" };
 type LyricMachineContext = {
   currentLyricIndex: number;
   currentOutlineIndex: number;
@@ -93,7 +104,12 @@ const lyricMachine = setup({
       }
     },
     notifyParent: ({ context, event }) => {
-      emit({
+      // emit({
+      //   type: "lyric_update",
+      //   index: context.currentLyricIndex,
+      //   outlineIndex: context.currentOutlineIndex,
+      // });
+      sendTo(({ event }) => event.sender, {
         type: "lyric_update",
         index: context.currentLyricIndex,
         outlineIndex: context.currentOutlineIndex,
@@ -101,7 +117,7 @@ const lyricMachine = setup({
     },
   },
 }).createMachine({
-  id: "lyric",
+  id: "lyricMachine",
   context: { currentLyricIndex: 0, currentOutlineIndex: 0 },
   initial: "idle",
   states: {
@@ -187,11 +203,17 @@ export const audioPlayerMachine = setup({
       );
       const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
 
-      context.lyricActor?.send({
+      // context.lyricActor?.send({
+      //   type: "UPDATE",
+      //   index: newLyricIndex,
+      //   outlineIndex: newOutlineIndex,
+      // });
+      sendTo("lyricMachine", ({ self }) => ({
         type: "UPDATE",
         index: newLyricIndex,
         outlineIndex: newOutlineIndex,
-      });
+        sender: self,
+      }));
     },
     handleLyricClick: ({ context, event }) => {
       if (event.type === "click_lyric") {
