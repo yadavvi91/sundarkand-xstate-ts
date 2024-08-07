@@ -103,18 +103,25 @@ const lyricMachine = setup({
         context.currentOutlineIndex = event.outlineIndex;
       }
     },
-    notifyParent: ({ context, event }) => {
-      // emit({
-      //   type: "lyric_update",
-      //   index: context.currentLyricIndex,
-      //   outlineIndex: context.currentOutlineIndex,
-      // });
-      sendTo(({ event }) => event.sender, {
+    // notifyParent: ({ context, event }) => {
+    //   // emit({
+    //   //   type: "lyric_update",
+    //   //   index: context.currentLyricIndex,
+    //   //   outlineIndex: context.currentOutlineIndex,
+    //   // });
+    //   sendTo(({ event }) => event.sender, {
+    //     type: "lyric_update",
+    //     index: context.currentLyricIndex,
+    //     outlineIndex: context.currentOutlineIndex,
+    //   });
+    // },
+    notifyParent: sendTo("audioPlayer", ({ context, event }) => {
+      return {
         type: "lyric_update",
         index: context.currentLyricIndex,
         outlineIndex: context.currentOutlineIndex,
-      });
-    },
+      };
+    }),
   },
 }).createMachine({
   id: "lyricMachine",
@@ -196,25 +203,19 @@ export const audioPlayerMachine = setup({
       // Logic to scroll to the current lyric
       console.log("Scrolling to lyric index:", context.currentLyricIndex);
     },
-    updateTimeAndLyric: ({ context }) => {
+    updateTimeAndLyric: sendTo("lyricMachine", ({ context, self }) => {
       const newLyricIndex = findLyricIndex(
         context.lyrics,
         context.currentPosition,
       );
       const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
 
-      // context.lyricActor?.send({
-      //   type: "UPDATE",
-      //   index: newLyricIndex,
-      //   outlineIndex: newOutlineIndex,
-      // });
-      sendTo("lyricMachine", ({ self }) => ({
+      return {
         type: "UPDATE",
         index: newLyricIndex,
         outlineIndex: newOutlineIndex,
-        sender: self,
-      }));
-    },
+      };
+    }),
     handleLyricClick: ({ context, event }) => {
       if (event.type === "click_lyric") {
         const newOutlineIndex = findOutlineIndex(context.lyrics, event.index);
