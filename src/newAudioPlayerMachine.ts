@@ -111,13 +111,20 @@ const lyricMachine = setup({
     //     outlineIndex: context.currentOutlineIndex,
     //   };
     // }),
-    emitLyricUpdate: ({ context }) => {
-      context.emitter.emit({
+    emitLyricUpdate: sendTo("audioPlayer", ({ context, event }) => {
+      return {
         type: "lyric_update",
         index: context.currentLyricIndex,
         outlineIndex: context.currentOutlineIndex,
-      });
-    },
+      };
+    }),
+    // emitLyricUpdate: ({ context }) => {
+    //   context.emitter.emit({
+    //     type: "lyric_update",
+    //     index: context.currentLyricIndex,
+    //     outlineIndex: context.currentOutlineIndex,
+    //   });
+    // },
   },
 }).createMachine({
   id: "lyricMachine",
@@ -231,16 +238,13 @@ export const audioPlayerMachine = setup({
     //   }
     // },
     handleLyricClick: sendTo(
-      (context) => context.context.lyricActor,
-      (context) => {
-        if (context.event?.type === "click_lyric") {
+      ({ context }) => context.lyricActor,
+      ({ context, event }) => {
+        if (event?.type === "click_lyric") {
           return {
             type: "UPDATE",
-            index: context.event?.index,
-            outlineIndex: findOutlineIndex(
-              context.context.lyrics,
-              context.event?.index,
-            ),
+            index: event?.index,
+            outlineIndex: findOutlineIndex(context.lyrics, event?.index),
           };
         }
         return { type: "NOOP" };
@@ -283,11 +287,7 @@ export const audioPlayerMachine = setup({
           actions: [
             assign({
               scrollActor: ({ spawn }) => spawn(scrollMachine),
-              lyricActor: ({ spawn }) =>
-                spawn(lyricMachine, {
-                  id: "lyricMachine",
-                  systemId: "lyricMachine",
-                }),
+              lyricActor: ({ spawn }) => spawn(lyricMachine),
             }),
             { type: "setDuration" },
           ],
