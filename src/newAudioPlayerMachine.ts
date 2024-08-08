@@ -104,20 +104,6 @@ const lyricMachine = setup({
         context.currentOutlineIndex = event.outlineIndex;
       }
     },
-    // notifyParent: sendTo("audioPlayer", ({ context, event }) => {
-    //   return {
-    //     type: "lyric_update",
-    //     index: context.currentLyricIndex,
-    //     outlineIndex: context.currentOutlineIndex,
-    //   };
-    // }),
-    // emitLyricUpdate: sendTo("audioPlayer", ({ context, event }) => {
-    //   return {
-    //     type: "lyric_update",
-    //     index: context.currentLyricIndex,
-    //     outlineIndex: context.currentOutlineIndex,
-    //   };
-    // }),
     emitLyricUpdate: sendTo(
       ({ system }) => {
         return system.get("root");
@@ -130,13 +116,6 @@ const lyricMachine = setup({
         };
       },
     ),
-    // emitLyricUpdate: ({ context }) => {
-    //   context.emitter.emit({
-    //     type: "lyric_update",
-    //     index: context.currentLyricIndex,
-    //     outlineIndex: context.currentOutlineIndex,
-    //   });
-    // },
   },
 }).createMachine({
   id: "lyricMachine",
