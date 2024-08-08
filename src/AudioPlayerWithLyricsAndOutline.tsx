@@ -16,7 +16,10 @@ import { createBrowserInspector } from "@statelyai/inspect";
 const { inspect } = createBrowserInspector();
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
-  const [state, send] = useMachine(audioPlayerMachine, { inspect });
+  const [state, send] = useMachine(audioPlayerMachine, {
+    inspect,
+    systemId: "root",
+  });
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
