@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useMachine } from "@xstate/react";
 import { audioPlayerMachine, Lyric } from "./newAudioPlayerMachine.ts"; // Assume this is imported from your machine file
 import {
@@ -24,6 +24,10 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    console.log("State changed", state.value, state.context);
+  }, [state]);
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -218,7 +222,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   }
 
   const renderLyrics = (lyrics: Lyric[]) => {
-    let currentOutline = state.context.currentOutlineIndex;
+    let currentOutline = -1;
     return (
       <div className="w-full flex flex-col items-center">
         {lyrics.reduce((acc, lyric, index) => {
@@ -409,8 +413,12 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
           <audio
             ref={audioRef}
             src={soundPavan}
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={handleLoadedMetadata}
+            onTimeUpdate={() => {
+              handleTimeUpdate();
+            }}
+            onLoadedMetadata={() => {
+              handleLoadedMetadata();
+            }}
             onEnded={() => send({ type: "pause" })}
           />
         </div>
