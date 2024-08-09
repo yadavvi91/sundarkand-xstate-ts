@@ -263,7 +263,7 @@ export const audioPlayerMachine = setup({
     volume: 1,
     isManualScrolling: false,
     scrollTimeout: null,
-    lyrics: lyricsPavan,
+    lyrics: lyricsVikesh,
     outline: outline,
     scrollActor: null,
     lyricActor: null,

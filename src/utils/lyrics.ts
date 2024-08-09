@@ -1,5 +1,5 @@
-// import soundVikesh from "./assets/vikesh-june15-2024.wav";
-import soundPavan from "../assets/pavan-dec23-2024.wav";
+// import soundPavan from "../assets/pavan-dec23-2024.wav";
+import soundVikesh from "../assets/vikesh-june15-2024.wav";
 import { Lyric } from "../newAudioPlayerMachine.ts";
 
 export const outline = [
@@ -36,27 +36,27 @@ export const footnotes = [
   {
     id: 5,
     text: "हनुमान-विभीषण संवाद",
-    audio: { sound: soundPavan },
+    audio: { sound: soundVikesh },
   },
   {
     id: 9,
     text: "हनुमान द्वारा अशोक वाटिका विध्वंस, अक्ष...",
-    audio: { sound: soundPavan },
+    audio: { sound: soundVikesh },
   },
   {
     id: 14,
     text: "श्रीराम जी को वानरों की सेना के साथ च...",
-    audio: { sound: soundPavan },
+    audio: { sound: soundVikesh },
   },
   {
     id: 19,
     text: "हनुमान द्वारा अशोक वाटिका विध्वंस, अक्ष...",
-    audio: { sound: soundPavan },
+    audio: { sound: soundVikesh },
   },
   {
     id: 21,
     text: "श्रीराम जी को वानरों की सेना के साथ च...",
-    audio: { sound: soundPavan },
+    audio: { sound: soundVikesh },
   },
 ];
 

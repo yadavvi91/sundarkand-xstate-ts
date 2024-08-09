@@ -9,7 +9,7 @@ import {
   SkipBack,
   SkipForward,
 } from "lucide-react";
-import soundPavan from "./assets/pavan-dec23-2024.wav";
+import soundVikesh from "./assets/vikesh-june15-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
 import { createBrowserInspector } from "@statelyai/inspect";
 
@@ -412,7 +412,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
           </div>
           <audio
             ref={audioRef}
-            src={soundPavan}
+            src={soundVikesh}
             onTimeUpdate={() => {
               handleTimeUpdate();
             }}
