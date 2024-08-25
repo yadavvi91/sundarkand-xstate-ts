@@ -179,6 +179,37 @@ export const audioPlayerMachine = setup({
     showStartPlayingToast: ({ context, event }) => {
       console.log("Start playing toast", context, event);
     },
+    // loadInitialIndices: ({ context, event }) => {
+    //   console.log("Start playing toast", context, event);
+    //   const newLyricIndex = findLyricIndex(
+    //     context.lyrics,
+    //     context.currentPosition || 0,
+    //   );
+    //   const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
+    //
+    //   return {
+    //     type: "UPDATE",
+    //     index: newLyricIndex,
+    //     outlineIndex: newOutlineIndex,
+    //   };
+    // },
+    loadInitialIndices: assign({
+      currentLyricIndex: ({ context, event }) => {
+        const newLyricIndex = findLyricIndex(
+          context.lyrics,
+          context.currentPosition || 0,
+        );
+        return newLyricIndex;
+      },
+      currentOutlineIndex: ({ context, event }) => {
+        const newLyricIndex = findLyricIndex(
+          context.lyrics,
+          context.currentPosition || 0,
+        );
+        const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
+        return newOutlineIndex;
+      },
+    }),
     // startPlayingSundarKand: ({ context, event }) => {
     //   console.log("Start Playing Sundarkand", context, event);
     //   // send({ type: "play_audio" });
@@ -344,6 +375,7 @@ export const audioPlayerMachine = setup({
       entry: [
         { type: "showDataLoadedToast", params: { msg: "Data loaded" } },
         { type: "showStartPlayingToast", params: { msg: "Start playing" } },
+        { type: "loadInitialIndices", params: { msg: "Load Initial Indices" } },
       ],
       // exit: [
       //   {
@@ -362,7 +394,7 @@ export const audioPlayerMachine = setup({
       type: "parallel",
       states: {
         "audio playing states": {
-          initial: "playingAudio",
+          initial: "pausedAudio",
           states: {
             playingAudio: {
               on: {
