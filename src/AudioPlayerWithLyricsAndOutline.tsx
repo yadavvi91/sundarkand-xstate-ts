@@ -21,7 +21,15 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollEffect = () => {
+  const scrollEffect = ({ context, event }) => {
+    if (context !== undefined) {
+      const scrollState = context.scrollActor?.getSnapshot();
+      if (scrollState?.matches("scrolling")) {
+        // do nothing
+        console.log("scrolling");
+        return;
+      }
+    }
     const container = lyricsContainerRef.current;
     if (!container) return;
     const highlightedLyric = container.querySelector(".bg-yellow-200");
@@ -79,13 +87,14 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   };
 
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    // send({ type: "manual_scroll" });
+    send({ type: "manual_scroll" });
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollState = state.context.scrollActor?.getSnapshot();
     if (scrollState?.matches("scrolling")) {
       // do nothing
+      console.log(`scrollState: ${scrollState}`);
     } else {
       const container = lyricsContainerRef.current;
       if (!container) return;
