@@ -140,11 +140,19 @@ export const audioPlayerMachine = setup({
     //   context.scrollActor = spawn(scrollMachine);
     //   context.lyricActor = spawn(lyricMachine);
     // },
-    setDuration: ({ context, event }) => {
-      if (event.type === "data_loaded") {
-        context.duration = event.duration;
-      }
-    },
+    // setDuration: ({ context, event }) => {
+    //   if (event.type === "data_loaded") {
+    //     context.duration = event.duration;
+    //   }
+    // },
+    setDuration: assign({
+      duration: ({ context, event }) => {
+        if (event.type === "data_loaded") {
+          return event.duration;
+        }
+        return context.duration;
+      },
+    }),
     showDataLoadedToast: ({ context, event }) => {
       console.log("Data loaded toast", context, event);
     },
@@ -472,7 +480,7 @@ export const audioPlayerMachine = setup({
                   actions: "triggerManualScroll",
                 },
                 lyric_update: {
-                  actions: ["updateLyricIndices"],
+                  actions: ["updateLyricIndices", "scrollToAPositionEffect"],
                 },
               },
             },

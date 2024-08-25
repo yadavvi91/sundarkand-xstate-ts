@@ -35,6 +35,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       console.log(
         `lyricTop < containerHeight * 0.25: ${lyricTop < containerHeight * 0.25}, lyricBottom > containerHeight * 0.75: ${lyricBottom > containerHeight * 0.75}`,
       );
+      console.log(`lyricTop: ${lyricTop}, containerHeight: ${containerHeight}`);
       if (
         lyricTop < containerHeight * 0.25 ||
         lyricBottom > containerHeight * 0.75
