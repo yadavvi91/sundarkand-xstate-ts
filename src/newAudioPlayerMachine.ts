@@ -447,6 +447,9 @@ export const audioPlayerMachine = setup({
                 seek: {
                   target: "#audioPlayerSeek.seeking",
                 },
+                time_update: {
+                  actions: ["updateTime", "updateTimeAndLyric"],
+                },
                 change_volume: {
                   actions: "updateVolume",
                 },
