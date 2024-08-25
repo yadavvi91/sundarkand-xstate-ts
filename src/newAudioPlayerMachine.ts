@@ -231,9 +231,15 @@ export const audioPlayerMachine = setup({
         return { type: "NOOP" };
       },
     ),
-    triggerManualScroll: ({ context }) => {
-      context.scrollActor?.send({ type: "SCROLL" });
-    },
+    // triggerManualScroll: ({ context }) => {
+    //   context.scrollActor?.send({ type: "SCROLL" });
+    // },
+    triggerManualScroll: sendTo(
+      ({ context }) => context.scrollActor,
+      ({ context, event }) => {
+        return { type: "SCROLL" };
+      },
+    ),
     updateLyricIndices: assign({
       currentLyricIndex: ({ context, event }) => {
         return event.type === "lyric_update"

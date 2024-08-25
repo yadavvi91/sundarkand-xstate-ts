@@ -44,6 +44,44 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     }
   };
 
+  const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    handleScroll(e);
+    send({ type: "manual_scroll" });
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    // console.log(state.context.scrollActor?.toJSON.toString());
+    // console.log(state.context.scrollActor?.getSnapshot());
+    const scrollState = state.context.scrollActor?.getSnapshot();
+    if (scrollState?.matches("scrolling")) {
+      // do nothing
+      send({ type: "manual_scroll" });
+    } else {
+      const container = lyricsContainerRef.current;
+      if (!container) return;
+      const highlightedLyric = container.querySelector(".bg-yellow-200");
+      if (highlightedLyric) {
+        const containerRect = container.getBoundingClientRect();
+        const lyricRect = highlightedLyric.getBoundingClientRect();
+        const containerHeight = containerRect.height;
+        const lyricTop = lyricRect.top - containerRect.top;
+
+        if (
+          lyricTop < containerHeight * 0.25 ||
+          lyricTop > containerHeight * 0.75
+        ) {
+          console.log(
+            `should scroll, line number: ${state.context.currentPosition}`,
+          );
+          container.scrollTo({
+            top: container.scrollTop + lyricTop - containerHeight * 0.25,
+            behavior: "smooth",
+          });
+        }
+      }
+    }
+  };
+
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressRef.current || !audioRef.current) return;
 
@@ -320,7 +358,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         <div
           className="flex-grow p-8 overflow-y-auto flex flex-col items-center"
           ref={lyricsContainerRef}
-          onScroll={() => send({ type: "manual_scroll" })}
+          onScroll={(event) => handleManualScroll(event)}
         >
           <div className="w-full max-w-[1000px]">
             <h2 className="text-4xl font-bold mb-8 text-center w-full">
@@ -346,7 +384,10 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             <div
               ref={progressRef}
               className="h-2 bg-gray-300 rounded-full cursor-pointer"
-              onClick={(event) => handleProgressClick(event)}
+              onClick={(event) => {
+                handleProgressClick(event);
+                handleScroll(event);
+              }}
             >
               <div
                 className="h-full bg-blue-500 rounded-full"
