@@ -30,10 +30,14 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       const lyricRect = highlightedLyric.getBoundingClientRect();
       const containerHeight = containerRect.height;
       const lyricTop = lyricRect.top - containerRect.top;
+      const lyricBottom = lyricRect.bottom - containerRect.top;
 
+      console.log(
+        `lyricTop < containerHeight * 0.25: ${lyricTop < containerHeight * 0.25}, lyricBottom > containerHeight * 0.75: ${lyricBottom > containerHeight * 0.75}`,
+      );
       if (
         lyricTop < containerHeight * 0.25 ||
-        lyricTop > containerHeight * 0.75
+        lyricBottom > containerHeight * 0.75
       ) {
         const top = container.scrollTop + lyricTop - containerHeight * 0.25;
         container.scrollTo({
