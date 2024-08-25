@@ -185,14 +185,6 @@ export const audioPlayerMachine = setup({
         context.currentPosition = event.currentTime;
       }
     },
-    // updateVolume: ({ context, event }) => {
-    //   if (event.type === "change_volume") {
-    //     context.volume = event.volume;
-    //   }
-    //   assign({
-    //     volume: ({ context, event }) => (context.volume = event.volume),
-    //   });
-    // },
     updateVolume: assign({
       volume: ({ context, event }) => {
         if (event.type === "change_volume") {
