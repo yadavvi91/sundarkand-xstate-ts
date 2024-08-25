@@ -26,7 +26,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const outlineContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log("State changed", state.value, state.context);
+    // console.log("State changed", state.value, state.context);
   }, [state]);
 
   const togglePlayPause = () => {
@@ -46,8 +46,17 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
 
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
     handleScroll(e);
-    send({ type: "manual_scroll" });
+    // send({ type: "manual_scroll" });
   };
+
+  const scrollToSmoothly = (container: HTMLDivElement, top: number) =>
+    new Promise((resolve) => {
+      container.scrollTo({
+        top: top,
+        behavior: "smooth",
+      });
+      setTimeout(resolve, 500);
+    });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     // console.log(state.context.scrollActor?.toJSON.toString());
@@ -66,17 +75,17 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         const containerHeight = containerRect.height;
         const lyricTop = lyricRect.top - containerRect.top;
 
+        console.log(
+          `should scroll, line number: ${state.context.currentPosition}`,
+        );
         if (
           lyricTop < containerHeight * 0.25 ||
           lyricTop > containerHeight * 0.75
         ) {
-          console.log(
-            `should scroll, line number: ${state.context.currentPosition}`,
+          const top = container.scrollTop + lyricTop - containerHeight * 0.25;
+          scrollToSmoothly(container, top).then((response) =>
+            send({ type: "manual_scroll" }),
           );
-          container.scrollTo({
-            top: container.scrollTop + lyricTop - containerHeight * 0.25,
-            behavior: "smooth",
-          });
         }
       }
     }
