@@ -220,9 +220,25 @@ export const audioPlayerMachine = setup({
     //     outlineIndex: newOutlineIndex,
     //   };
     // }),
-    updateTimeAndLyric: ({ context, event }) => {
-      console.log(`updateTimeAndLyric: ${JSON.stringify(event)}`);
-    },
+    // updateTimeAndLyric: ({ context, event }) => {
+    //   console.log(`updateTimeAndLyric: ${JSON.stringify(event)}`);
+    // },
+    updateTimeAndLyric: sendTo(
+      ({ context }) => context.lyricActor,
+      ({ context, event }) => {
+        const newLyricIndex = findLyricIndex(
+          context.lyrics,
+          context.currentPosition,
+        );
+        const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
+
+        return {
+          type: "UPDATE",
+          index: newLyricIndex,
+          outlineIndex: newOutlineIndex,
+        };
+      },
+    ),
     // handleLyricClick: ({ context, event }) => {
     //   if (event.type === "click_lyric") {
     //     const newOutlineIndex = findOutlineIndex(context.lyrics, event.index);
