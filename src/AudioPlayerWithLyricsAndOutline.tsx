@@ -132,7 +132,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     send({ type: "seek_complete" });
     audioRef.current.currentTime = newTime;
 
-    handleScroll(e);
+    // handleScroll(e);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
