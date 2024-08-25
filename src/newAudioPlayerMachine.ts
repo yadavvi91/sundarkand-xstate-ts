@@ -169,11 +169,6 @@ export const audioPlayerMachine = setup({
     hideSeekingToast: ({ context, event }) => {
       console.log("Hide seeking toast", context, event);
     },
-    // updateSeekPosition: ({ context, event }) => {
-    //   if (event.type === "seek") {
-    //     context.seekPosition = event.position;
-    //   }
-    // },
     updateSeekPosition: assign({
       seekPosition: ({ context, event }) => {
         return event.type === "seek" ? event.position : context.seekPosition;
@@ -207,22 +202,6 @@ export const audioPlayerMachine = setup({
       // Logic to scroll to the current lyric
       console.log("Scrolling to lyric index:", context.currentLyricIndex);
     },
-    // updateTimeAndLyric: sendTo("lyricMachine", ({ context, self }) => {
-    //   const newLyricIndex = findLyricIndex(
-    //     context.lyrics,
-    //     context.currentPosition,
-    //   );
-    //   const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
-    //
-    //   return {
-    //     type: "UPDATE",
-    //     index: newLyricIndex,
-    //     outlineIndex: newOutlineIndex,
-    //   };
-    // }),
-    // updateTimeAndLyric: ({ context, event }) => {
-    //   console.log(`updateTimeAndLyric: ${JSON.stringify(event)}`);
-    // },
     updateTimeAndLyric: sendTo(
       ({ context }) => context.lyricActor,
       ({ context, event }) => {
@@ -239,16 +218,6 @@ export const audioPlayerMachine = setup({
         };
       },
     ),
-    // handleLyricClick: ({ context, event }) => {
-    //   if (event.type === "click_lyric") {
-    //     const newOutlineIndex = findOutlineIndex(context.lyrics, event.index);
-    //     context.lyricActor?.send({
-    //       type: "UPDATE",
-    //       index: event.index,
-    //       outlineIndex: newOutlineIndex,
-    //     });
-    //   }
-    // },
     handleLyricClick: sendTo(
       ({ context }) => context.lyricActor,
       ({ context, event }) => {
@@ -265,12 +234,6 @@ export const audioPlayerMachine = setup({
     triggerManualScroll: ({ context }) => {
       context.scrollActor?.send({ type: "SCROLL" });
     },
-    // updateLyricIndices: ({ context, event }) => {
-    //   if (event.type === "lyric_update") {
-    //     context.currentLyricIndex = event.index;
-    //     context.currentOutlineIndex = event.outlineIndex;
-    //   }
-    // },
     updateLyricIndices: assign({
       currentLyricIndex: ({ context, event }) => {
         return event.type === "lyric_update"
