@@ -185,11 +185,22 @@ export const audioPlayerMachine = setup({
         context.currentPosition = event.currentTime;
       }
     },
-    updateVolume: ({ context, event }) => {
-      if (event.type === "change_volume") {
-        context.volume = event.volume;
-      }
-    },
+    // updateVolume: ({ context, event }) => {
+    //   if (event.type === "change_volume") {
+    //     context.volume = event.volume;
+    //   }
+    //   assign({
+    //     volume: ({ context, event }) => (context.volume = event.volume),
+    //   });
+    // },
+    updateVolume: assign({
+      volume: ({ context, event }) => {
+        if (event.type === "change_volume") {
+          return event.volume;
+        }
+        return context.volume;
+      },
+    }),
     scrollToCurrentLyric: ({ context, event }) => {
       // Logic to scroll to the current lyric
       console.log("Scrolling to lyric index:", context.currentLyricIndex);
@@ -208,7 +219,7 @@ export const audioPlayerMachine = setup({
     //   };
     // }),
     updateTimeAndLyric: ({ context, event }) => {
-      console.log(`updateTimeAndLyric: ${event}`);
+      console.log(`updateTimeAndLyric: ${JSON.stringify(event)}`);
     },
     // handleLyricClick: ({ context, event }) => {
     //   if (event.type === "click_lyric") {
