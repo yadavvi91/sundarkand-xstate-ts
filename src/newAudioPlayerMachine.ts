@@ -83,6 +83,7 @@ const scrollMachine = setup({
         SCROLL: {
           target: "scrolling",
           internal: true,
+          reenter: true,
         },
       },
     },
