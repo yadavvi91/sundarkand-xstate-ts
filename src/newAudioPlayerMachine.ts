@@ -180,11 +180,14 @@ export const audioPlayerMachine = setup({
         context.seekPosition = null;
       }
     },
-    updateTime: ({ context, event }) => {
-      if (event.type === "time_update") {
-        context.currentPosition = event.currentTime;
-      }
-    },
+    updateTime: assign({
+      currentPosition: ({ context, event }) => {
+        if (event.type === "time_update") {
+          return event.currentTime;
+        }
+        return context.currentPosition;
+      },
+    }),
     updateVolume: assign({
       volume: ({ context, event }) => {
         if (event.type === "change_volume") {
