@@ -1,13 +1,5 @@
-import {
-  createMachine,
-  assign,
-  ActorRefFrom,
-  setup,
-  emit,
-  sendTo,
-} from "xstate";
-import { lyricsPavan, lyricsVikesh, outline } from "./utils/lyrics.ts";
-import { send } from "vite";
+import { ActorRefFrom, assign, sendTo, setup } from "xstate";
+import { lyricsPavan, outline } from "./utils/lyrics.ts";
 
 type AudioPlayerEvent =
   | { type: "data_loading_started" }
