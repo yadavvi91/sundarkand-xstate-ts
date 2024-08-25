@@ -27,7 +27,7 @@ export interface Lyric {
 }
 
 type AudioPlayerContext = {
-  currentPosition: number;
+  currentPosition: number | null;
   seekPosition: number | null;
   duration: number;
   currentLyricIndex: number;
@@ -174,12 +174,14 @@ export const audioPlayerMachine = setup({
         context.seekPosition = event.position;
       }
     },
-    updateCurrentPosition: ({ context, event }) => {
-      if (context.seekPosition !== null) {
-        context.currentPosition = context.seekPosition;
-        context.seekPosition = null;
-      }
-    },
+    updateCurrentPosition: assign({
+      currentPosition: ({ context, event }) => {
+        return context.seekPosition != null ? context.seekPosition : null;
+      },
+      seekPosition: ({ context, event }) => {
+        return context.seekPosition != null ? null : context.seekPosition;
+      },
+    }),
     updateTime: assign({
       currentPosition: ({ context, event }) => {
         if (event.type === "time_update") {
