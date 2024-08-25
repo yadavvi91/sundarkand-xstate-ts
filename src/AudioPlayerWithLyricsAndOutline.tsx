@@ -89,36 +89,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
     send({ type: "manual_scroll" });
   };
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollState = state.context.scrollActor?.getSnapshot();
-    if (scrollState?.matches("scrolling")) {
-      // do nothing
-      console.log(`scrollState: ${scrollState}`);
-    } else {
-      const container = lyricsContainerRef.current;
-      if (!container) return;
-      const highlightedLyric = container.querySelector(".bg-yellow-200");
-      if (highlightedLyric) {
-        const containerRect = container.getBoundingClientRect();
-        const lyricRect = highlightedLyric.getBoundingClientRect();
-        const containerHeight = containerRect.height;
-        const lyricTop = lyricRect.top - containerRect.top;
-
-        if (
-          lyricTop < containerHeight * 0.25 ||
-          lyricTop > containerHeight * 0.75
-        ) {
-          const top = container.scrollTop + lyricTop - containerHeight * 0.25;
-          container.scrollTo({
-            top: top,
-            behavior: "smooth",
-          });
-        }
-      }
-    }
-  };
-
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressRef.current || !audioRef.current) return;
 
@@ -131,8 +101,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     send({ type: "seek", position: newTime });
     send({ type: "seek_complete" });
     audioRef.current.currentTime = newTime;
-
-    // handleScroll(e);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -425,7 +393,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               className="h-2 bg-gray-300 rounded-full cursor-pointer"
               onClick={(event) => {
                 handleProgressClick(event);
-                // handleScroll(event);
               }}
             >
               <div
