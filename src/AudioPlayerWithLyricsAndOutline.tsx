@@ -45,7 +45,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   };
 
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    handleScroll(e);
+    // handleScroll(e);
     // send({ type: "manual_scroll" });
   };
 
@@ -395,7 +395,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               className="h-2 bg-gray-300 rounded-full cursor-pointer"
               onClick={(event) => {
                 handleProgressClick(event);
-                handleScroll(event);
+                // handleScroll(event);
               }}
             >
               <div
