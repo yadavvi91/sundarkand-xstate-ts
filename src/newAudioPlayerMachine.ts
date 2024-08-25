@@ -39,6 +39,7 @@ type AudioPlayerContext = {
   outline: string[];
   scrollActor: ActorRefFrom<typeof scrollMachine> | null;
   lyricActor: ActorRefFrom<typeof lyricMachine> | null;
+  scrollEffect: (() => void) | null;
 };
 
 // Actor Machines
@@ -169,6 +170,11 @@ export const audioPlayerMachine = setup({
     hideSeekingToast: ({ context, event }) => {
       console.log("Hide seeking toast", context, event);
     },
+    scrollToAPosition: ({ context, event }) => {
+      if (context.scrollEffect) {
+        context.scrollEffect();
+      }
+    },
     updateSeekPosition: assign({
       seekPosition: ({ context, event }) => {
         return event.type === "seek" ? event.position : context.seekPosition;
@@ -269,6 +275,7 @@ export const audioPlayerMachine = setup({
     outline: outline,
     scrollActor: null,
     lyricActor: null,
+    scrollEffect: null,
   },
   initial: "noData",
   states: {
@@ -437,6 +444,7 @@ export const audioPlayerMachine = setup({
                   actions: [
                     { type: "updateCurrentPosition", params: {} },
                     { type: "hideSeekingToast", params: {} },
+                    { type: "scrollToAPositionEffect", params: {} },
                   ],
                   target: "idle",
                 },

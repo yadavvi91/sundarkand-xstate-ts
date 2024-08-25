@@ -16,14 +16,43 @@ import { createBrowserInspector } from "@statelyai/inspect";
 const { inspect } = createBrowserInspector();
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
-  const [state, send] = useMachine(audioPlayerMachine, {
-    inspect,
-    systemId: "root",
-  });
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollEffect = () => {
+    const container = lyricsContainerRef.current;
+    if (!container) return;
+    const highlightedLyric = container.querySelector(".bg-yellow-200");
+    if (highlightedLyric) {
+      const containerRect = container.getBoundingClientRect();
+      const lyricRect = highlightedLyric.getBoundingClientRect();
+      const containerHeight = containerRect.height;
+      const lyricTop = lyricRect.top - containerRect.top;
+
+      if (
+        lyricTop < containerHeight * 0.25 ||
+        lyricTop > containerHeight * 0.75
+      ) {
+        const top = container.scrollTop + lyricTop - containerHeight * 0.25;
+        container.scrollTo({
+          top: top,
+          behavior: "smooth",
+        });
+      }
+    }
+  };
+
+  const [state, send] = useMachine(
+    audioPlayerMachine.provide({
+      actions: { scrollToAPositionEffect: scrollEffect },
+    }),
+    {
+      inspect,
+      systemId: "root",
+    },
+  );
 
   useEffect(() => {
     // console.log("State changed", state.value, state.context);
@@ -45,26 +74,13 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   };
 
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    // handleScroll(e);
     // send({ type: "manual_scroll" });
   };
 
-  const scrollToSmoothly = (container: HTMLDivElement, top: number) =>
-    new Promise((resolve) => {
-      container.scrollTo({
-        top: top,
-        behavior: "smooth",
-      });
-      setTimeout(resolve, 500);
-    });
-
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    // console.log(state.context.scrollActor?.toJSON.toString());
-    // console.log(state.context.scrollActor?.getSnapshot());
     const scrollState = state.context.scrollActor?.getSnapshot();
     if (scrollState?.matches("scrolling")) {
       // do nothing
-      send({ type: "manual_scroll" });
     } else {
       const container = lyricsContainerRef.current;
       if (!container) return;
@@ -75,17 +91,15 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         const containerHeight = containerRect.height;
         const lyricTop = lyricRect.top - containerRect.top;
 
-        console.log(
-          `should scroll, line number: ${state.context.currentPosition}`,
-        );
         if (
           lyricTop < containerHeight * 0.25 ||
           lyricTop > containerHeight * 0.75
         ) {
           const top = container.scrollTop + lyricTop - containerHeight * 0.25;
-          scrollToSmoothly(container, top).then((response) =>
-            send({ type: "manual_scroll" }),
-          );
+          container.scrollTo({
+            top: top,
+            behavior: "smooth",
+          });
         }
       }
     }
@@ -103,6 +117,8 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     send({ type: "seek", position: newTime });
     send({ type: "seek_complete" });
     audioRef.current.currentTime = newTime;
+
+    handleScroll(e);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
