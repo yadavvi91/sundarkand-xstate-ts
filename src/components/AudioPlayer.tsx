@@ -55,7 +55,7 @@ const AudioPlayer = forwardRef<HTMLAudioElement, AudioPlayerProps>(
       const clickPosition =
         (e.clientX - progressBar.getBoundingClientRect().left) /
         progressBar.offsetWidth;
-      
+
       onProgressClick(clickPosition);
     };
 
@@ -138,6 +138,7 @@ const AudioPlayer = forwardRef<HTMLAudioElement, AudioPlayerProps>(
           />
         </div>
         <audio
+          key={audioSrc} // Add key to force recreation when src changes
           ref={ref}
           src={audioSrc}
           onTimeUpdate={(e) => {

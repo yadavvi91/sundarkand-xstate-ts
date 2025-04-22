@@ -371,6 +371,25 @@ export const audioPlayerMachine = setup({
             : sourceLyrics.filter(lyric => lyric.type !== "samput");
         }
         return context.lyrics;
+      },
+      // Reset duration and current position when changing audio source
+      duration: ({ context, event }) => {
+        if (event.type === "lyrics.source.change") {
+          return 0; // Reset duration to be updated when metadata loads
+        }
+        return context.duration;
+      },
+      currentPosition: ({ context, event }) => {
+        if (event.type === "lyrics.source.change") {
+          return 0; // Reset position to start of audio
+        }
+        return context.currentPosition;
+      },
+      currentLyricIndex: ({ context, event }) => {
+        if (event.type === "lyrics.source.change") {
+          return 0; // Reset to first lyric
+        }
+        return context.currentLyricIndex;
       }
     }),
     toggleSamputFilter: assign({
@@ -394,6 +413,52 @@ export const audioPlayerMachine = setup({
             : sourceLyrics.filter(lyric => lyric.type !== "samput");
         }
         return context.lyrics;
+      },
+      currentLyricIndex: ({ context, event }) => {
+        if (event.type === "lyrics.filter.toggle") {
+          const showSamput = event.showSamput;
+
+          // If we're showing samput, we need to adjust the currentLyricIndex
+          if (!showSamput) {
+            const source = context.lyricsSource;
+            const sourceLyrics = source === "pavan" ? lyricsPavan : lyricsVikesh;
+            const currentLyric = sourceLyrics[context.currentLyricIndex];
+
+            // If current lyric is a samput, find the nearest non-samput lyric
+            if (currentLyric && currentLyric.type === "samput") {
+              // Get filtered lyrics (without samput)
+              const filteredLyrics = sourceLyrics.filter(lyric => lyric.type !== "samput");
+
+              // Find the nearest non-samput lyric index based on time
+              const currentTime = currentLyric.time;
+              const nearestIndex = filteredLyrics.findIndex(lyric => lyric.time >= currentTime);
+
+              // If found, use that index, otherwise use the last lyric
+              return nearestIndex !== -1 ? nearestIndex : Math.max(0, filteredLyrics.length - 1);
+            }
+
+            // If current lyric is not a samput, adjust index to account for removed samput lyrics
+            const filteredLyrics = sourceLyrics.filter(lyric => lyric.type !== "samput");
+            const currentTime = currentLyric.time;
+            return filteredLyrics.findIndex(lyric => lyric.time >= currentTime);
+          }
+
+          // If we're showing samput again, find the corresponding index in the full lyrics array
+          if (showSamput) {
+            const source = context.lyricsSource;
+            const sourceLyrics = source === "pavan" ? lyricsPavan : lyricsVikesh;
+            const filteredLyrics = sourceLyrics.filter(lyric => lyric.type !== "samput");
+
+            // Get the current lyric from filtered list
+            const currentFilteredLyric = filteredLyrics[context.currentLyricIndex];
+
+            if (currentFilteredLyric) {
+              // Find the same lyric in the full list
+              return sourceLyrics.findIndex(lyric => lyric.time === currentFilteredLyric.time);
+            }
+          }
+        }
+        return context.currentLyricIndex;
       }
     }),
   },
