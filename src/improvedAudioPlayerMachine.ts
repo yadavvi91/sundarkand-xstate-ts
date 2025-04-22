@@ -1,5 +1,9 @@
 import { ActorRefFrom, assign, sendTo, setup } from "xstate";
-import { lyricsPavan, lyricsVikesh, outline, dialogues } from "./utils/lyrics.ts";
+import { lyricsPavan, outline, dialogues } from "./utils/lyrics.ts";
+import { enhancedLyricsVikesh } from "./utils/enhancedLyrics.ts";
+
+// Use enhanced lyrics with narrative context
+const lyricsVikesh = enhancedLyricsVikesh;
 
 // Event types using dot notation convention
 type AudioPlayerEvent =
@@ -44,6 +48,11 @@ export interface Lyric {
     end: number;
   };
   translation?: string;
+  narrativeContext?: {
+    narrator: string;
+    listener: string;
+    description: string;
+  };
 }
 
 type DisplayMode = "who-said-to-whom" | "translations";

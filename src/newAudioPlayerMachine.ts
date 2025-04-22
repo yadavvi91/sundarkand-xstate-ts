@@ -39,6 +39,11 @@ export interface Lyric {
     start: number;
     end: number;
   };
+  narrativeContext?: {
+    narrator: string;
+    listener: string;
+    description: string;
+  };
 }
 
 type AudioPlayerContext = {
