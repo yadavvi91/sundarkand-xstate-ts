@@ -1,23 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import { useMachine } from "@xstate/react";
 import { audioPlayerMachine, Lyric, DialogueInfo } from "./improvedAudioPlayerMachine.ts";
-import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  SkipBack,
-  SkipForward,
-} from "lucide-react";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
 import { createBrowserInspector } from "@statelyai/inspect";
+import AudioPlayer from "./components/AudioPlayer";
 
 const { inspect } = createBrowserInspector();
 
 const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
 
@@ -88,24 +80,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
 
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
     send({ type: "scroll.manual" });
-  };
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!progressRef.current || !audioRef.current) return;
-
-    const progressBar = progressRef.current;
-    const clickPosition =
-      (e.clientX - progressBar.getBoundingClientRect().left) /
-      progressBar.offsetWidth;
-    const newTime = clickPosition * state.context.duration;
-
-    send({ type: "audio.seek", position: newTime });
-    send({ type: "audio.seek.complete" });
-    audioRef.current.currentTime = newTime;
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    send({ type: "volume.change", volume: newVolume });
   };
 
   const handleForward = () => {
@@ -504,22 +478,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const handleTimeUpdate = () => {
-    send({
-      type: "audio.time.update",
-      currentTime: audioRef.current?.currentTime || 0,
-    });
-  };
-
-  const handleLoadedMetadata = () => {
-    send({ type: "data.loaded", duration: audioRef.current?.duration || 0 });
-  };
 
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 absolute inset-0">
@@ -539,96 +497,43 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         </div>
         <div className="w-[400px] bg-white p-8 flex flex-col justify-between border-l border-gray-200">
           {state.context.currentDialogueId && <DialogueDisplay />}
-          <div className="mb-4">
-            <div className="w-full h-32 bg-gray-200 mb-4 flex justify-center items-center p-2">
-              <div className="h-full w-full bg-gray-200 flex justify-center items-center">
-                <img
-                  src={hanumanji}
-                  className="max-h-full max-w-full object-contain"
-                  alt="Hanumanji"
-                />
-              </div>
-            </div>
-            <div className="text-sm text-gray-600 mb-2">
-              Vikesh Bhaiyya Recitation June 15 2024
-            </div>
-            <div
-              ref={progressRef}
-              className="h-2 bg-gray-300 rounded-full cursor-pointer"
-              onClick={(event) => {
-                handleProgressClick(event);
-              }}
-            >
-              <div
-                className="h-full bg-blue-500 rounded-full"
-                style={{
-                  width: `${(state.context.currentPosition / state.context.duration) * 100}%`,
-                }}
-              ></div>
-            </div>
-            <div className="flex justify-between mt-1 text-sm text-gray-600">
-              <span>{formatTime(state.context.currentPosition)}</span>
-              <span>{formatTime(state.context.duration)}</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <button
-              className="text-gray-600 hover:text-gray-800"
-              onClick={handleBackward}
-            >
-              <SkipBack size={20} />
-            </button>
-            <button
-              onClick={togglePlayPause}
-              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
-            >
-              {state.matches({
-                playing: { playback: "playing" },
-              }) ? (
-                <Pause size={20} />
-              ) : (
-                <Play size={20} />
-              )}
-            </button>
-            <button
-              className="text-gray-600 hover:text-gray-800"
-              onClick={handleForward}
-            >
-              <SkipForward size={20} />
-            </button>
-            <button
-              onClick={() =>
-                send({
-                  type: "volume.change",
-                  volume: state.context.volume === 0 ? 1 : 0,
-                })
-              }
-              className="text-gray-600 hover:text-gray-800"
-            >
-              {state.context.volume === 0 ? (
-                <VolumeX size={20} />
-              ) : (
-                <Volume2 size={20} />
-              )}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={state.context.volume}
-              onChange={(event) => handleVolumeChange(event)}
-              className="w-20"
-            />
-          </div>
-          <audio
+          <AudioPlayer
             ref={audioRef}
-            src={soundPavan}
-            onTimeUpdate={() => {
-              handleTimeUpdate();
+            currentPosition={state.context.currentPosition || 0}
+            duration={state.context.duration}
+            volume={state.context.volume}
+            isPlaying={state.matches({
+              playing: { playback: "playing" },
+            })}
+            audioSrc={soundPavan}
+            imageSrc={hanumanji}
+            imageAlt="Hanumanji"
+            recitationTitle="Vikesh Bhaiyya Recitation June 15 2024"
+            onPlayPause={togglePlayPause}
+            onForward={handleForward}
+            onBackward={handleBackward}
+            onVolumeChange={(volume) => 
+              send({
+                type: "volume.change",
+                volume
+              })
+            }
+            onProgressClick={(clickPosition) => {
+              const newTime = clickPosition * state.context.duration;
+              send({ type: "audio.seek", position: newTime });
+              send({ type: "audio.seek.complete" });
+              if (audioRef.current) {
+                audioRef.current.currentTime = newTime;
+              }
             }}
-            onLoadedMetadata={() => {
-              handleLoadedMetadata();
+            onTimeUpdate={(currentTime) => {
+              send({
+                type: "audio.time.update",
+                currentTime
+              });
+            }}
+            onLoadedMetadata={(duration) => {
+              send({ type: "data.loaded", duration });
             }}
             onEnded={() => send({ type: "audio.pause" })}
           />
