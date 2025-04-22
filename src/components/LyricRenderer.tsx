@@ -44,7 +44,7 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
 
   const hasNarrativeContext = lyric.narrativeContext !== undefined;
   const narrativeContextIndicator = hasNarrativeContext ? (
-    <div className="flex items-center">
+    <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
       <sup
         className="text-amber-500 cursor-pointer ml-1"
         onClick={(e) => onNarrativeContextClick(e, lyric.narrativeContext!)}
@@ -141,6 +141,109 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
           </div>
         );
       }
+    }
+
+    // General case for other verses with partial dialogue
+    const beforeDialogue = lyric.text.substring(0, lyric.dialogueTextRange.start);
+    const dialogueText = lyric.text.substring(lyric.dialogueTextRange.start, lyric.dialogueTextRange.end);
+    const afterDialogue = lyric.text.substring(lyric.dialogueTextRange.end);
+
+    const midPoint = lyric.text.indexOf("।");
+    if (midPoint !== -1) {
+      // If there's a middle dot, split the text at that point
+      const firstPart = lyric.text.slice(0, midPoint + 1);
+      const secondPart = lyric.text.slice(midPoint + 1);
+
+      // Determine if the dialogue spans both parts or is contained in one part
+      if (midPoint < lyric.dialogueTextRange.start) {
+        // Dialogue is entirely in the second part
+        return (
+          <div className="flex items-center style={{ minHeight: '2em' }}">
+            <div className="flex w-full px-2" style={{ width: "500px" }}>
+              <p className="w-[245px] flex justify-between">
+                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+              <p className={`w-[255px] flex justify-between pl-2 ${currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+            </div>
+            <div className="w-[40px] flex">
+              {dialogueIndicator}
+              {narrativeContextIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      } else if (midPoint >= lyric.dialogueTextRange.end) {
+        // Dialogue is entirely in the first part
+        return (
+          <div className="flex items-center style={{ minHeight: '2em' }}">
+            <div className="flex w-full px-2" style={{ width: "500px" }}>
+              <p className={`w-[245px] flex justify-between ${currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+              <p className="w-[255px] flex justify-between pl-2">
+                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+            </div>
+            <div className="w-[40px] flex">
+              {dialogueIndicator}
+              {narrativeContextIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      } else {
+        // Dialogue spans both parts
+        return (
+          <div className="flex items-center style={{ minHeight: '2em' }}">
+            <div className="flex w-full px-2" style={{ width: "500px" }}>
+              <p className={`w-[245px] flex justify-between ${currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+              <p className={`w-[255px] flex justify-between pl-2 ${currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+            </div>
+            <div className="w-[40px] flex">
+              {dialogueIndicator}
+              {narrativeContextIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      }
+    } else {
+      // If there's no middle dot, apply the background to the entire text
+      return (
+        <div className="flex items-center">
+          <p
+            className={`flex justify-between w-full px-2 ${currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}
+            style={{ width: "500px" }}
+          >
+            {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
+              <span key={i}>{word}</span>
+            ))}
+          </p>
+          <div className="w-[40px] flex">
+            {dialogueIndicator}
+            {narrativeContextIndicator}
+            {footnoteIndicator}
+          </div>
+        </div>
+      );
     }
   }
 
