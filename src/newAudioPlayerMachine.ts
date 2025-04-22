@@ -1,5 +1,5 @@
 import { ActorRefFrom, assign, sendTo, setup } from "xstate";
-import { lyricsPavan, outline } from "./utils/lyrics.ts";
+import { lyricsPavan, outline, dialogues } from "./utils/lyrics.ts";
 
 type AudioPlayerEvent =
   | { type: "data_loading_started" }
@@ -17,7 +17,16 @@ type AudioPlayerEvent =
   | { type: "lyric_update"; index: number; outlineIndex: number }
   | { type: "manual_scroll" }
   | { type: "change_volume"; volume: number }
+  | { type: "dialogue_click"; dialogueId: number }
+  | { type: "dialogue_close" }
   | { type: "abcd" };
+
+export interface DialogueInfo {
+  id: number;
+  speaker: string;
+  listener: string;
+  description: string;
+}
 
 export interface Lyric {
   time: number;
@@ -25,6 +34,11 @@ export interface Lyric {
   text: string;
   outlineIndex: number;
   footnoteIds: number[];
+  dialogueId?: number;
+  dialogueTextRange?: {
+    start: number;
+    end: number;
+  };
 }
 
 type AudioPlayerContext = {
@@ -38,6 +52,8 @@ type AudioPlayerContext = {
   scrollTimeout: number | null;
   lyrics: Lyric[];
   outline: string[];
+  dialogues: DialogueInfo[];
+  currentDialogueId: number | null;
   scrollActor: ActorRefFrom<typeof scrollMachine> | null;
   lyricActor: ActorRefFrom<typeof lyricMachine> | null;
   scrollEffect: (() => void) | null;
@@ -131,6 +147,7 @@ const lyricMachine = setup({
     ),
   },
 }).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QBsCeAnAlgYwLIENsALTAOzADpMJkwBiAVQAUARAQQBUBRAbQAYAuolAAHAPaxMAF0xjSwkAA9EAFgBMAGhCpEARjW6Avsa2kxEOArRY8hEuQXjJMuQuUIAtADYtOz15MQaxwCYjJKalpHCWlZeSQlRABONQoAZhU0gHYAVl9ENRUADgoVPi81HONjIA */
   id: "lyricMachine",
   context: {
     currentLyricIndex: 0,
@@ -172,6 +189,17 @@ export const audioPlayerMachine = setup({
         }
         return context.duration;
       },
+    }),
+    handleDialogueClick: assign({
+      currentDialogueId: ({ context, event }) => {
+        if (event.type === "dialogue_click") {
+          return event.dialogueId;
+        }
+        return context.currentDialogueId;
+      }
+    }),
+    clearDialogue: assign({
+      currentDialogueId: () => null
     }),
     showDataLoadedToast: ({ context, event }) => {
       console.log("Data loaded toast", context, event);
@@ -342,6 +370,8 @@ export const audioPlayerMachine = setup({
     scrollTimeout: null,
     lyrics: lyricsPavan,
     outline: outline,
+    dialogues: dialogues,
+    currentDialogueId: null,
     scrollActor: null,
     lyricActor: null,
     scrollEffect: null,
@@ -459,6 +489,32 @@ export const audioPlayerMachine = setup({
               },
             },
           },
+        },
+        "dialogue manager": {
+          id: "dialogueManager",
+          initial: "idle",
+          states: {
+            idle: {
+              on: {
+                dialogue_click: {
+                  target: "showingDialogue",
+                  actions: ["handleDialogueClick"]
+                }
+              }
+            },
+            showingDialogue: {
+              on: {
+                dialogue_close: {
+                  target: "idle",
+                  actions: ["clearDialogue"]
+                },
+                dialogue_click: {
+                  target: "showingDialogue",
+                  actions: ["handleDialogueClick"]
+                }
+              }
+            }
+          }
         },
         "show play-pause toast": {
           id: "audioPlayerToast",

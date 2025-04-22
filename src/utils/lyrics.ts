@@ -1,6 +1,6 @@
 // import soundVikesh from "./assets/vikesh-june15-2024.wav";
 import soundPavan from "../assets/pavan-dec23-2024.wav";
-import { Lyric } from "../improvedAudioPlayerMachine.ts";
+import { Lyric, DialogueInfo } from "../newAudioPlayerMachine.ts";
 
 export const outline = [
   "सुंदरकांड",
@@ -60,6 +60,21 @@ export const footnotes = [
   },
 ];
 
+export const dialogues: DialogueInfo[] = [
+  {
+    id: 1,
+    speaker: "समुद्र (Ocean)",
+    listener: "श्री राम (Lord Ram)",
+    description: "समुद्र द्वारा श्री राम से क्षमा याचना और मार्ग देने का वचन"
+  },
+  {
+    id: 2,
+    speaker: "सुग्रीव (Sugriv)",
+    listener: "बानर (Monkeys)",
+    description: "सुग्रीव द्वारा बानरों को आदेश"
+  }
+];
+
 export const lyricsPavan = [
   { time: 0, type: "chaupai", text: "कादर मन कहुँ एक अधारा । दैव दैव आलसी पुकारा ॥", outlineIndex: 5, footnoteIds: [ 5, 9, 14, 19, 21 ] },
   { time: 11, type: "chaupai", text: "सुनत बिहसि बोले रघुबीरा । ऐसेहिं करब धरहु मन धीरा ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
@@ -76,7 +91,7 @@ export const lyricsPavan = [
 
   { time: 104, type: "chaupai", text: "प्रगट बखानहिं राम सुभाऊ । अति सप्रेम गा बिसरि दुराऊ ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
   { time: 110, type: "chaupai", text: "रिपु के दूत कपिन्ह तब जाने । सकल बाँधि कपीस पहिं आने ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
-  { time: 123, type: "chaupai", text: "कह सुग्रीव सुनहु सब बानर । अंग भंग करि पठवहु निसिचर ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
+  { time: 123, type: "chaupai", text: "कह सुग्रीव सुनहु सब बानर । अंग भंग करि पठवहु निसिचर ॥", outlineIndex: 5, footnoteIds: [ 5 ], dialogueId: 2, dialogueTextRange: { start: 10, end: 52 } },
   { time: 134, type: "chaupai", text: "सुनि सुग्रीव बचन कपि धाए । बाँधि कटक चहु पास फिराए ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
   { time: 146, type: "chaupai", text: "बहु प्रकार मारन कपि लागे । दीन पुकारत तदपि न त्यागे ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
   { time: 158, type: "chaupai", text: "जो हमार हर नासा काना । तेहि कोसलाधीस कै आना ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
@@ -194,14 +209,14 @@ export const lyricsPavan = [
 
   { time: 933, type: "samput", text: "दीन दयाल बिरिदु संभारी । हरहु नाथ मम संकट भारी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
 
-  { time: 943, type: "chaupai", text: "सभय सिंधु गहि पद प्रभु केरे । छमहु नाथ सब अवगुन मेरे ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 952, type: "chaupai", text: "गगन समीर अनल जल धरनी । इन्ह कइ नाथ सहज जड़ करनी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 958, type: "chaupai", text: "तव प्रेरित मायाँ उपजाए । सृष्टि हेतु सब ग्रंथनि गाए ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 962, type: "chaupai", text: "प्रभु आयसु जेहि कहँ जस अहई । सो तेहि भाँति रहे सुख लहई ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 968, type: "chaupai", text: "प्रभु भल कीन्ही मोहि सिख दीन्ही । मरजादा पुनि तुम्हरी कीन्ही ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 972, type: "chaupai", text: "ढोल गवाँर सूद्र पसु नारी । सकल ताड़ना के अधिकारी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 977, type: "chaupai", text: "प्रभु प्रताप मैं जाब सुखाई । उतरिहि कटकु न मोरि बड़ाई ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
-  { time: 982, type: "chaupai", text: "प्रभु अग्या अपेल श्रुति गाई । करौं सो बेगि जौ तुम्हहि सोहाई ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
+  { time: 943, type: "chaupai", text: "सभय सिंधु गहि पद प्रभु केरे । छमहु नाथ सब अवगुन मेरे ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1, dialogueTextRange: { start: 27, end: 52 } },
+  { time: 952, type: "chaupai", text: "गगन समीर अनल जल धरनी । इन्ह कइ नाथ सहज जड़ करनी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
+  { time: 958, type: "chaupai", text: "तव प्रेरित मायाँ उपजाए । सृष्टि हेतु सब ग्रंथनि गाए ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
+  { time: 962, type: "chaupai", text: "प्रभु आयसु जेहि कहँ जस अहई । सो तेहि भाँति रहे सुख लहई ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
+  { time: 968, type: "chaupai", text: "प्रभु भल कीन्ही मोहि सिख दीन्ही । मरजादा पुनि तुम्हरी कीन्ही ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
+  { time: 972, type: "chaupai", text: "ढोल गवाँर सूद्र पसु नारी । सकल ताड़ना के अधिकारी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
+  { time: 977, type: "chaupai", text: "प्रभु प्रताप मैं जाब सुखाई । उतरिहि कटकु न मोरि बड़ाई ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
+  { time: 982, type: "chaupai", text: "प्रभु अग्या अपेल श्रुति गाई । करौं सो बेगि जौ तुम्हहि सोहाई ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ], dialogueId: 1 },
 
   { time: 986, type: "samput", text: "दीन दयाल बिरिदु संभारी । हरहु नाथ मम संकट भारी ॥", outlineIndex: 21, footnoteIds: [ 19, 21 ] },
 

@@ -1,5 +1,5 @@
 import { ActorRefFrom, assign, sendTo, setup } from "xstate";
-import { lyricsPavan, outline } from "./utils/lyrics.ts";
+import { lyricsPavan, outline, dialogues } from "./utils/lyrics.ts";
 
 // Event types using dot notation convention
 type AudioPlayerEvent =
@@ -18,7 +18,16 @@ type AudioPlayerEvent =
   | { type: "lyric.updated"; index: number; outlineIndex: number }
   | { type: "scroll.manual" }
   | { type: "volume.change"; volume: number }
-  | { type: "scroll.sync.needed" };
+  | { type: "scroll.sync.needed" }
+  | { type: "dialogue.click"; dialogueId: number }
+  | { type: "dialogue.close" };
+
+export interface DialogueInfo {
+  id: number;
+  speaker: string;
+  listener: string;
+  description: string;
+}
 
 export interface Lyric {
   time: number;
@@ -26,6 +35,11 @@ export interface Lyric {
   text: string;
   outlineIndex: number;
   footnoteIds: number[];
+  dialogueId?: number;
+  dialogueTextRange?: {
+    start: number;
+    end: number;
+  };
 }
 
 type AudioPlayerContext = {
@@ -39,6 +53,8 @@ type AudioPlayerContext = {
   scrollTimeout: number | null;
   lyrics: Lyric[];
   outline: string[];
+  dialogues: DialogueInfo[];
+  currentDialogueId: number | null;
   scrollActor: ActorRefFrom<typeof scrollMachine> | null;
   lyricActor: ActorRefFrom<typeof lyricMachine> | null;
   scrollEffect: (() => void) | null;
@@ -171,6 +187,17 @@ export const audioPlayerMachine = setup({
         }
         return context.duration;
       },
+    }),
+    handleDialogueClick: assign({
+      currentDialogueId: ({ context, event }) => {
+        if (event.type === "dialogue.click") {
+          return event.dialogueId;
+        }
+        return context.currentDialogueId;
+      }
+    }),
+    clearDialogue: assign({
+      currentDialogueId: () => null
     }),
     showDataLoadedToast: ({ context, event }) => {
       console.log("Data loaded toast", context, event);
@@ -319,6 +346,8 @@ export const audioPlayerMachine = setup({
     scrollTimeout: null,
     lyrics: lyricsPavan,
     outline: outline,
+    dialogues: dialogues,
+    currentDialogueId: null,
     scrollActor: null,
     lyricActor: null,
     scrollEffect: null,
@@ -359,6 +388,32 @@ export const audioPlayerMachine = setup({
     playing: {
       type: "parallel",
       states: {
+        dialogueManager: {
+          id: "dialogueManager",
+          initial: "idle",
+          states: {
+            idle: {
+              on: {
+                "dialogue.click": {
+                  target: "showingDialogue",
+                  actions: ["handleDialogueClick"]
+                }
+              }
+            },
+            showingDialogue: {
+              on: {
+                "dialogue.close": {
+                  target: "idle",
+                  actions: ["clearDialogue"]
+                },
+                "dialogue.click": {
+                  target: "showingDialogue",
+                  actions: ["handleDialogueClick"]
+                }
+              }
+            }
+          }
+        },
         playback: {
           initial: "paused",
           states: {

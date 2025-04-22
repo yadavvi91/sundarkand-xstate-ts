@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useMachine } from "@xstate/react";
-import { audioPlayerMachine, Lyric } from "./improvedAudioPlayerMachine.ts";
+import { audioPlayerMachine, Lyric, DialogueInfo } from "./improvedAudioPlayerMachine.ts";
 import {
   Play,
   Pause,
@@ -124,11 +124,39 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
-  const handleFootnoteClick = (
+  const DialogueDisplay = () => {
+    const currentDialogue = state.context.dialogues.find(d => d.id === state.context.currentDialogueId);
+
+    if (!currentDialogue) return null;
+
+    return (
+      <div className="mb-4">
+        <h3 className="text-xl font-bold mb-4">Who Said to Whom</h3>
+        <div className="mb-2 p-4 rounded bg-green-100">
+          <div className="flex justify-between">
+            <div>
+              <span className="font-bold">{currentDialogue.speaker}</span> to <span className="font-bold">{currentDialogue.listener}</span>
+            </div>
+            <button 
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => send({ type: "dialogue.close" })}
+            >
+              ×
+            </button>
+          </div>
+          <p className="text-sm mt-2">{currentDialogue.description}</p>
+        </div>
+      </div>
+    );
+  };
+
+
+  const handleDialogueClick = (
     e: React.MouseEvent<HTMLElement, MouseEvent>,
-    footnoteId: number,
+    dialogueId: number,
   ) => {
-    console.log(e, footnoteId);
+    e.stopPropagation(); // Prevent triggering the lyric click event
+    send({ type: "dialogue.click", dialogueId });
   };
 
   function splitOnSpaceExceptLast(str: string) {
@@ -164,21 +192,164 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       },
       [],
     );
-    const footnoteIndicator =
-      footnoteIds && footnoteIds.length > 0 ? (
-        <div className="flex items-center">
-          {footnoteIds.map((noteId) => (
-            <sup
-              key={`notedId-${noteId}`}
-              className="text-blue-500 cursor-pointer ml-1"
-              onClick={(e) => handleFootnoteClick(e, noteId)}
-            >
-              [{noteId}]
-            </sup>
-          ))}
-        </div>
-      ) : null;
+    const footnoteIndicator = null;
 
+    const hasDialogue = lyric.dialogueId !== undefined;
+    const dialogueIndicator = hasDialogue ? (
+      <div className="flex items-center">
+        <sup
+          className="text-green-500 cursor-pointer ml-1"
+          onClick={(e) => handleDialogueClick(e, lyric.dialogueId!)}
+        >
+          [👥]
+        </sup>
+      </div>
+    ) : null;
+
+    // For verses with partial dialogue
+    if (hasDialogue && lyric.dialogueTextRange) {
+      // Special case for the first verse at time 943
+      if (lyric.time === 943) {
+        const midPoint = lyric.text.indexOf("।");
+        const firstPart = lyric.text.slice(0, midPoint + 1);
+        const secondPart = lyric.text.slice(midPoint + 1);
+
+        return (
+          <div className="flex items-center style={{ minHeight: '2em' }}">
+            <div className="flex w-full px-2" style={{ width: "500px" }}>
+              <p className="w-[245px] flex justify-between">
+                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+              <p className={`w-[255px] flex justify-between pl-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+            </div>
+            <div className="w-[20px]">
+              {dialogueIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      }
+
+      // For the verse at time 123 (Sugriv's dialogue)
+      if (lyric.time === 123) {
+        const beforeDialogue = lyric.text.substring(0, lyric.dialogueTextRange.start);
+        const dialogueText = lyric.text.substring(lyric.dialogueTextRange.start, lyric.dialogueTextRange.end);
+
+        const midPoint = lyric.text.indexOf("।");
+        if (midPoint >= lyric.dialogueTextRange.start) {
+          // If the middle dot is within the dialogue part
+          const firstPart = lyric.text.slice(0, midPoint + 1);
+          const secondPart = lyric.text.slice(midPoint + 1);
+
+          return (
+            <div className="flex items-center style={{ minHeight: '2em' }}">
+              <div className="flex w-full px-2" style={{ width: "500px" }}>
+                <p className="w-[245px] flex justify-between">
+                  <span>{beforeDialogue}</span>
+                  <span className={`${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                    {firstPart.substring(beforeDialogue.length)}
+                  </span>
+                </p>
+                <p className={`w-[255px] flex justify-between pl-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
+                  {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                    <span key={i}>{word}</span>
+                  ))}
+                </p>
+              </div>
+              <div className="w-[20px]">
+                {dialogueIndicator}
+                {footnoteIndicator}
+              </div>
+            </div>
+          );
+        }
+      }
+    }
+
+    // For regular verses with full dialogue
+    if (hasDialogue && !lyric.dialogueTextRange) {
+      if (lyric.type === "doha" || lyric.type === "sortha") {
+        const pattern = /॥\d+॥/;
+        const isLine2 = pattern.test(lyric.text);
+        return (
+          <div className="flex items-center">
+            <p
+              className={`flex justify-between w-full px-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}
+              style={{ width: isLine2 ? "400px" : "370px" }}
+            >
+              {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
+                <span key={i}>{word}</span>
+              ))}
+            </p>
+            <div className="w-[20px]">
+              {dialogueIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      }
+      else if (lyric.type === "samput") {
+        const midPoint = lyric.text.indexOf("।");
+        const firstPart = lyric.text.slice(0, midPoint + 1);
+        const secondPart = lyric.text.slice(midPoint + 1) + "  ";
+        return (
+          <div className="flex items-center">
+            <div
+              className={`flex w-full px-2 italic text-gray-600 font-bold ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}
+              style={{ width: "500px" }}
+            >
+              <p className="w-[245px] flex justify-between">
+                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+              <p className="w-[255px] flex justify-between pl-2">
+                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+            </div>
+            <div className="w-[20px]">
+              {dialogueIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      }
+      else {
+        const midPoint = lyric.text.indexOf("।");
+        const firstPart = lyric.text.slice(0, midPoint + 1);
+        const secondPart = lyric.text.slice(midPoint + 1) + "  ";
+        return (
+          <div className="flex items-center style={{ minHeight: '2em' }}">
+            <div className={`flex w-full px-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`} style={{ width: "500px" }}>
+              <p className="w-[245px] flex justify-between">
+                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+              <p className="w-[255px] flex justify-between pl-2">
+                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </p>
+            </div>
+            <div className="w-[20px]">
+              {dialogueIndicator}
+              {footnoteIndicator}
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // For regular verses without dialogue
     if (lyric.type === "doha" || lyric.type === "sortha") {
       const pattern = /॥\d+॥/;
       const isLine2 = pattern.test(lyric.text);
@@ -193,14 +364,11 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             ))}
           </p>
           <div className="w-[20px]">
-            {" "}
-            {/* Fixed width container for footnote */}
             {footnoteIndicator}
           </div>
         </div>
       );
     }
-    //
     else if (lyric.type === "samput") {
       const midPoint = lyric.text.indexOf("।");
       const firstPart = lyric.text.slice(0, midPoint + 1);
@@ -223,14 +391,11 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             </p>
           </div>
           <div className="w-[20px]">
-            {" "}
-            {/* Fixed width container for footnote */}
             {footnoteIndicator}
           </div>
         </div>
       );
     }
-    //
     else {
       const midPoint = lyric.text.indexOf("।");
       const firstPart = lyric.text.slice(0, midPoint + 1);
@@ -250,8 +415,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             </p>
           </div>
           <div className="w-[20px]">
-            {" "}
-            {/* Fixed width container for footnote */}
             {footnoteIndicator}
           </div>
         </div>
@@ -374,7 +537,8 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             {renderLyrics(state.context.lyrics)}
           </div>
         </div>
-        <div className="w-[400px] bg-white p-8 flex flex-col justify-end border-l border-gray-200">
+        <div className="w-[400px] bg-white p-8 flex flex-col justify-between border-l border-gray-200">
+          {state.context.currentDialogueId && <DialogueDisplay />}
           <div className="mb-4">
             <div className="w-full h-32 bg-gray-200 mb-4 flex justify-center items-center p-2">
               <div className="h-full w-full bg-gray-200 flex justify-center items-center">
