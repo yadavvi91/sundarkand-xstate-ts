@@ -495,8 +495,10 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             {renderLyrics(state.context.lyrics)}
           </div>
         </div>
-        <div className="w-[400px] bg-white p-8 flex flex-col justify-between border-l border-gray-200">
-          {state.context.currentDialogueId && <DialogueDisplay />}
+        <div className="w-[400px] bg-white p-8 flex flex-col border-l border-gray-200">
+          <div className="flex-grow">
+            {state.context.currentDialogueId && <DialogueDisplay />}
+          </div>
           <AudioPlayer
             ref={audioRef}
             currentPosition={state.context.currentPosition || 0}
