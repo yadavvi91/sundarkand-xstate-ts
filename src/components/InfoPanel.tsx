@@ -1,6 +1,7 @@
 import React, { RefObject } from "react";
 import { DialogueInfo, Lyric } from "../improvedAudioPlayerMachine";
 import DialogueDisplay from "./DialogueDisplay";
+import NarrativeContextDisplay from "./NarrativeContextDisplay";
 import TranslationsDisplay from "./TranslationsDisplay";
 import AudioPlayer from "./AudioPlayer";
 import ModeMenu from "./ModeMenu";
@@ -11,8 +12,10 @@ interface InfoPanelProps {
   dialogues: DialogueInfo[];
   lyrics: Lyric[];
   currentLyricIndex: number;
+  currentNarrativeContext: { narrator: string; listener: string; description: string } | null;
   onModeChange: (mode: "who-said-to-whom" | "translations") => void;
   onDialogueClose: () => void;
+  onNarrativeContextClose: () => void;
   audioRef: RefObject<HTMLAudioElement>;
   currentPosition: number;
   duration: number;
@@ -42,8 +45,10 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
   dialogues,
   lyrics,
   currentLyricIndex,
+  currentNarrativeContext,
   onModeChange,
   onDialogueClose,
+  onNarrativeContextClose,
   audioRef,
   currentPosition,
   duration,
@@ -72,35 +77,44 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
     <div className="w-[400px] bg-white p-8 flex flex-col border-l border-gray-200">
       <div className="flex-grow">
         {displayMode === "who-said-to-whom" ? (
-          currentDialogueId && currentDialogue ? (
-            <DialogueDisplay 
-              dialogue={currentDialogue} 
-              onClose={onDialogueClose} 
-              onModeChange={onModeChange}
-              currentMode={displayMode}
-              lyricsSource={lyricsSource}
-              showSamput={showSamput}
-              onLyricsSourceChange={onLyricsSourceChange}
-              onSamputFilterToggle={onSamputFilterToggle}
-            />
-          ) : (
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">Who Said to Whom</h3>
-                <ModeMenu 
-                  currentMode={displayMode} 
-                  onModeChange={onModeChange}
-                  lyricsSource={lyricsSource}
-                  showSamput={showSamput}
-                  onLyricsSourceChange={onLyricsSourceChange}
-                  onSamputFilterToggle={onSamputFilterToggle}
-                />
+          <>
+            {currentDialogueId && currentDialogue ? (
+              <DialogueDisplay 
+                dialogue={currentDialogue} 
+                onClose={onDialogueClose} 
+                onModeChange={onModeChange}
+                currentMode={displayMode}
+                lyricsSource={lyricsSource}
+                showSamput={showSamput}
+                onLyricsSourceChange={onLyricsSourceChange}
+                onSamputFilterToggle={onSamputFilterToggle}
+              />
+            ) : (
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold">Who Said to Whom</h3>
+                  <ModeMenu 
+                    currentMode={displayMode} 
+                    onModeChange={onModeChange}
+                    lyricsSource={lyricsSource}
+                    showSamput={showSamput}
+                    onLyricsSourceChange={onLyricsSourceChange}
+                    onSamputFilterToggle={onSamputFilterToggle}
+                  />
+                </div>
+                <div className="mb-2 p-4 rounded bg-gray-100 text-center">
+                  <p>Click on a dialogue indicator [👥] in the text to see who said what to whom.</p>
+                </div>
               </div>
-              <div className="mb-2 p-4 rounded bg-gray-100 text-center">
-                <p>Click on a dialogue indicator [👥] in the text to see who said what to whom.</p>
-              </div>
-            </div>
-          )
+            )}
+
+            {currentNarrativeContext && (
+              <NarrativeContextDisplay 
+                narrativeContext={currentNarrativeContext} 
+                onClose={onNarrativeContextClose} 
+              />
+            )}
+          </>
         ) : (
           <TranslationsDisplay 
             lyrics={lyrics} 

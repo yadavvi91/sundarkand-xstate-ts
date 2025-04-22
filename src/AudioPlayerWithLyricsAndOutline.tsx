@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import { useMachine } from "@xstate/react";
 import { audioPlayerMachine, Lyric } from "./improvedAudioPlayerMachine.ts";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
@@ -15,6 +15,13 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
+
+  // State for narrative context
+  const [currentNarrativeContext, setCurrentNarrativeContext] = useState<{
+    narrator: string;
+    listener: string;
+    description: string;
+  } | null>(null);
 
   const scrollEffect = ({ context, event }) => {
     if (context !== undefined) {
@@ -109,6 +116,18 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     send({ type: "dialogue.click", dialogueId });
   }, [send]);
 
+  const handleNarrativeContextClick = useCallback((
+    e: React.MouseEvent<HTMLElement, MouseEvent>,
+    narrativeContext: { narrator: string; listener: string; description: string },
+  ) => {
+    e.stopPropagation(); // Prevent triggering the lyric click event
+    setCurrentNarrativeContext(narrativeContext);
+  }, []);
+
+  const handleNarrativeContextClose = useCallback(() => {
+    setCurrentNarrativeContext(null);
+  }, []);
+
 
 
   const handleLyricClick = useCallback((index: number, lyric: Lyric) => {
@@ -150,6 +169,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
           isFirstOccurrence={isFirstOccurrence}
           currentDialogueId={state.context.currentDialogueId}
           onDialogueClick={handleDialogueClick}
+          onNarrativeContextClick={handleNarrativeContextClick}
         />
         <InfoPanel
           displayMode={state.context.displayMode}
@@ -157,8 +177,10 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
           dialogues={state.context.dialogues}
           lyrics={state.context.lyrics}
           currentLyricIndex={state.context.currentLyricIndex}
+          currentNarrativeContext={currentNarrativeContext}
           onModeChange={(mode) => send({ type: "display.mode.change", mode })}
           onDialogueClose={() => send({ type: "dialogue.close" })}
+          onNarrativeContextClose={handleNarrativeContextClose}
           audioRef={audioRef}
           currentPosition={state.context.currentPosition || 0}
           duration={state.context.duration}

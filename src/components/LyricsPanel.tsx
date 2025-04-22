@@ -12,6 +12,7 @@ interface LyricsPanelProps {
   isFirstOccurrence: (footnoteId: number, currentIndex: number) => boolean;
   currentDialogueId: number | null;
   onDialogueClick: (e: React.MouseEvent<HTMLElement, MouseEvent>, dialogueId: number) => void;
+  onNarrativeContextClick: (e: React.MouseEvent<HTMLElement, MouseEvent>, narrativeContext: { narrator: string; listener: string; description: string }) => void;
 }
 
 const LyricsPanel: React.FC<LyricsPanelProps> = ({
@@ -23,7 +24,8 @@ const LyricsPanel: React.FC<LyricsPanelProps> = ({
   onManualScroll,
   isFirstOccurrence,
   currentDialogueId,
-  onDialogueClick
+  onDialogueClick,
+  onNarrativeContextClick
 }) => {
   const renderLyrics = () => {
     let currentOutline = -1;
@@ -61,6 +63,7 @@ const LyricsPanel: React.FC<LyricsPanelProps> = ({
                 isFirstOccurrence={isFirstOccurrence}
                 currentDialogueId={currentDialogueId}
                 onDialogueClick={onDialogueClick}
+                onNarrativeContextClick={onNarrativeContextClick}
               />
             </div>,
           );

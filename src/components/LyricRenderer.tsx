@@ -1,6 +1,5 @@
-import React, { memo, useState } from "react";
+import React, { memo } from "react";
 import { Lyric } from "../improvedAudioPlayerMachine";
-import NarrativeContextPanel from "./NarrativeContextPanel";
 
 interface LyricRendererProps {
   lyric: Lyric;
@@ -8,6 +7,7 @@ interface LyricRendererProps {
   isFirstOccurrence: (footnoteId: number, currentIndex: number) => boolean;
   currentDialogueId: number | null;
   onDialogueClick: (e: React.MouseEvent<HTMLElement, MouseEvent>, dialogueId: number) => void;
+  onNarrativeContextClick: (e: React.MouseEvent<HTMLElement, MouseEvent>, narrativeContext: { narrator: string; listener: string; description: string }) => void;
 }
 
 const LyricRenderer: React.FC<LyricRendererProps> = memo(({
@@ -15,9 +15,10 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
   index,
   isFirstOccurrence,
   currentDialogueId,
-  onDialogueClick
+  onDialogueClick,
+  onNarrativeContextClick
 }) => {
-  const [isContextPanelOpen, setIsContextPanelOpen] = useState(false);
+  // No longer need local state for narrative context panel
   const footnoteIds = lyric.footnoteIds.reduce(
     (acc: number[], footnoteId: number, i: number) => {
       if (isFirstOccurrence(footnoteId, index)) {
@@ -46,7 +47,7 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
     <div className="flex items-center">
       <sup
         className="text-amber-500 cursor-pointer ml-1"
-        onClick={() => setIsContextPanelOpen(!isContextPanelOpen)}
+        onClick={(e) => onNarrativeContextClick(e, lyric.narrativeContext!)}
       >
         [📜]
       </sup>
@@ -220,40 +221,28 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
     }
   }
 
-  // Render the narrative context panel at the component level
-  const narrativeContextPanel = hasNarrativeContext && isContextPanelOpen && (
-    <NarrativeContextPanel
-      isOpen={isContextPanelOpen}
-      contextInfo={lyric.narrativeContext!}
-      onClose={() => setIsContextPanelOpen(false)}
-    />
-  );
+  // Narrative context panel is now rendered in the InfoPanel component
 
   // For regular verses without dialogue
   if (lyric.type === "doha" || lyric.type === "sortha") {
     const pattern = /॥\d+॥/;
     const isLine2 = pattern.test(lyric.text);
     return (
-      <>
-        <div className="flex flex-col w-full">
-          <div className={`flex items-center ${hasNarrativeContext ? 'border-l-4 border-amber-500 pl-2' : ''}`}>
-            <p
-              className="flex justify-between w-full px-2"
-              style={{ width: isLine2 ? "400px" : "370px" }}
-            >
-              {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
-                <span key={i}>{word}</span>
-              ))}
-            </p>
-            <div className="w-[40px] flex">
-              {dialogueIndicator}
-              {narrativeContextIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
+      <div className={`flex items-center ${hasNarrativeContext ? 'border-l-4 border-amber-500 pl-2' : ''}`} style={{ minHeight: '2em' }}>
+        <p
+          className="flex justify-between w-full px-2"
+          style={{ width: isLine2 ? "400px" : "370px" }}
+        >
+          {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
+            <span key={i}>{word}</span>
+          ))}
+        </p>
+        <div className="w-[40px] flex">
+          {dialogueIndicator}
+          {narrativeContextIndicator}
+          {footnoteIndicator}
         </div>
-        {narrativeContextPanel}
-      </>
+      </div>
     );
   }
   else if (lyric.type === "samput") {
@@ -261,33 +250,28 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
     const firstPart = lyric.text.slice(0, midPoint + 1);
     const secondPart = lyric.text.slice(midPoint + 1) + "  ";
     return (
-      <>
-        <div className="flex flex-col w-full">
-          <div className={`flex items-center ${hasNarrativeContext ? 'border-l-4 border-amber-500 pl-2' : ''}`}>
-            <div
-              className="flex w-full px-2 italic text-gray-600 font-bold"
-              style={{ width: "500px" }}
-            >
-              <p className="w-[245px] flex justify-between">
-                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-              <p className="w-[255px] flex justify-between pl-2">
-                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-            </div>
-            <div className="w-[40px] flex">
-              {dialogueIndicator}
-              {narrativeContextIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
+      <div className={`flex items-center ${hasNarrativeContext ? 'border-l-4 border-amber-500 pl-2' : ''}`} style={{ minHeight: '2em' }}>
+        <div
+          className="flex w-full px-2 italic text-gray-600 font-bold"
+          style={{ width: "500px" }}
+        >
+          <p className="w-[245px] flex justify-between">
+            {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+              <span key={i}>{word}</span>
+            ))}
+          </p>
+          <p className="w-[255px] flex justify-between pl-2">
+            {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+              <span key={i}>{word}</span>
+            ))}
+          </p>
         </div>
-        {narrativeContextPanel}
-      </>
+        <div className="w-[40px] flex">
+          {dialogueIndicator}
+          {narrativeContextIndicator}
+          {footnoteIndicator}
+        </div>
+      </div>
     );
   }
   else {
@@ -295,30 +279,25 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
     const firstPart = lyric.text.slice(0, midPoint + 1);
     const secondPart = lyric.text.slice(midPoint + 1) + "  ";
     return (
-      <>
-        <div className="flex flex-col w-full">
-          <div className={`flex items-center ${hasNarrativeContext ? 'border-l-4 border-amber-500 pl-2' : ''}`} style={{ minHeight: '2em' }}>
-            <div className="flex w-full px-2" style={{ width: "500px" }}>
-              <p className="w-[245px] flex justify-between">
-                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-              <p className="w-[255px] flex justify-between pl-2">
-                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-            </div>
-            <div className="w-[40px] flex">
-              {dialogueIndicator}
-              {narrativeContextIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
+      <div className={`flex items-center ${hasNarrativeContext ? 'border-l-4 border-amber-500 pl-2' : ''}`} style={{ minHeight: '2em' }}>
+        <div className="flex w-full px-2" style={{ width: "500px" }}>
+          <p className="w-[245px] flex justify-between">
+            {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
+              <span key={i}>{word}</span>
+            ))}
+          </p>
+          <p className="w-[255px] flex justify-between pl-2">
+            {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
+              <span key={i}>{word}</span>
+            ))}
+          </p>
         </div>
-        {narrativeContextPanel}
-      </>
+        <div className="w-[40px] flex">
+          {dialogueIndicator}
+          {narrativeContextIndicator}
+          {footnoteIndicator}
+        </div>
+      </div>
     );
   }
 }, (prevProps, nextProps) => {
@@ -326,7 +305,8 @@ const LyricRenderer: React.FC<LyricRendererProps> = memo(({
   return (
     prevProps.lyric === nextProps.lyric &&
     prevProps.index === nextProps.index &&
-    prevProps.currentDialogueId === nextProps.currentDialogueId
+    prevProps.currentDialogueId === nextProps.currentDialogueId &&
+    prevProps.onNarrativeContextClick === nextProps.onNarrativeContextClick
   );
 });
 
