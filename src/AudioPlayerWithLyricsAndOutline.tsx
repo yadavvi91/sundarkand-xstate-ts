@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMachine } from "@xstate/react";
 import { audioPlayerMachine, Lyric, DialogueInfo } from "./improvedAudioPlayerMachine.ts";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
 import { createBrowserInspector } from "@statelyai/inspect";
 import AudioPlayer from "./components/AudioPlayer";
+import { MoreVertical, MessageSquare, Languages } from "lucide-react";
 
 const { inspect } = createBrowserInspector();
 
@@ -12,6 +13,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const scrollEffect = ({ context, event }) => {
     if (context !== undefined) {
@@ -98,6 +100,125 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
+  const ModeMenu = () => {
+    return (
+      <div className="relative">
+        <button 
+          className="text-gray-600 hover:text-gray-800 p-2"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          <MoreVertical size={24} />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+            <div className="py-1">
+              <button
+                className={`flex items-center px-4 py-2 text-sm w-full text-left ${state.context.displayMode === "who-said-to-whom" ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                onClick={() => {
+                  send({ type: "display.mode.change", mode: "who-said-to-whom" });
+                  setMenuOpen(false);
+                }}
+              >
+                <MessageSquare size={16} className="mr-2" />
+                Who Said to Whom
+              </button>
+              <button
+                className={`flex items-center px-4 py-2 text-sm w-full text-left ${state.context.displayMode === "translations" ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                onClick={() => {
+                  send({ type: "display.mode.change", mode: "translations" });
+                  setMenuOpen(false);
+                }}
+              >
+                <Languages size={16} className="mr-2" />
+                Translations
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const TranslationsDisplay = () => {
+    // Find lyrics with translations around the current lyric index
+    const currentIndex = state.context.currentLyricIndex;
+    const lyrics = state.context.lyrics;
+
+    // Look for translations in a window of 5 lyrics around the current one
+    const startIndex = Math.max(0, currentIndex - 2);
+    const endIndex = Math.min(lyrics.length - 1, currentIndex + 2);
+
+    // Find consecutive lyrics with translations
+    let translationGroups = [];
+    let currentGroup = [];
+
+    for (let i = startIndex; i <= endIndex; i++) {
+      const lyric = lyrics[i];
+      if (lyric.translation) {
+        // If this is a doha or sortha and the next one is also a doha or sortha with the same translation,
+        // they should be grouped together
+        if (
+          (lyric.type === "doha" || lyric.type === "sortha") &&
+          i < lyrics.length - 1 &&
+          (lyrics[i + 1].type === "doha" || lyrics[i + 1].type === "sortha") &&
+          lyrics[i + 1].translation === lyric.translation
+        ) {
+          currentGroup.push(lyric);
+        } else if (currentGroup.length > 0 && currentGroup[0].translation === lyric.translation) {
+          // If this lyric has the same translation as the current group, add it
+          currentGroup.push(lyric);
+        } else {
+          // Start a new group
+          if (currentGroup.length > 0) {
+            translationGroups.push([...currentGroup]);
+          }
+          currentGroup = [lyric];
+        }
+      }
+    }
+
+    // Add the last group if it exists
+    if (currentGroup.length > 0) {
+      translationGroups.push(currentGroup);
+    }
+
+    if (translationGroups.length === 0) {
+      return (
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">Translations</h3>
+            <ModeMenu />
+          </div>
+          <div className="mb-2 p-4 rounded bg-yellow-100 text-center">
+            <p>No translations available for the current verses.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">Translations</h3>
+          <ModeMenu />
+        </div>
+        {translationGroups.map((group, groupIndex) => (
+          <div key={groupIndex} className="mb-4 p-4 rounded bg-yellow-100">
+            <div className="mb-2">
+              {group.map((lyric, i) => (
+                <div key={i} className="mb-1">
+                  <p className="font-medium">{lyric.text}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm mt-2 border-t pt-2 border-yellow-200">{group[0].translation}</p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const DialogueDisplay = () => {
     const currentDialogue = state.context.dialogues.find(d => d.id === state.context.currentDialogueId);
 
@@ -105,7 +226,10 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
 
     return (
       <div className="mb-4">
-        <h3 className="text-xl font-bold mb-4">Who Said to Whom</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">Who Said to Whom</h3>
+          <ModeMenu />
+        </div>
         <div className="mb-2 p-4 rounded bg-green-100">
           <div className="flex justify-between">
             <div>
@@ -497,7 +621,23 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         </div>
         <div className="w-[400px] bg-white p-8 flex flex-col border-l border-gray-200">
           <div className="flex-grow">
-            {state.context.currentDialogueId && <DialogueDisplay />}
+            {state.context.displayMode === "who-said-to-whom" ? (
+              state.context.currentDialogueId ? (
+                <DialogueDisplay />
+              ) : (
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold">Who Said to Whom</h3>
+                    <ModeMenu />
+                  </div>
+                  <div className="mb-2 p-4 rounded bg-gray-100 text-center">
+                    <p>Click on a dialogue indicator [👥] in the text to see who said what to whom.</p>
+                  </div>
+                </div>
+              )
+            ) : (
+              <TranslationsDisplay />
+            )}
           </div>
           <AudioPlayer
             ref={audioRef}

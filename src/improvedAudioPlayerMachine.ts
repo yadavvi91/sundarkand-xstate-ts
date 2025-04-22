@@ -20,7 +20,8 @@ type AudioPlayerEvent =
   | { type: "volume.change"; volume: number }
   | { type: "scroll.sync.needed" }
   | { type: "dialogue.click"; dialogueId: number }
-  | { type: "dialogue.close" };
+  | { type: "dialogue.close" }
+  | { type: "display.mode.change"; mode: DisplayMode };
 
 export interface DialogueInfo {
   id: number;
@@ -40,7 +41,10 @@ export interface Lyric {
     start: number;
     end: number;
   };
+  translation?: string;
 }
+
+type DisplayMode = "who-said-to-whom" | "translations";
 
 type AudioPlayerContext = {
   currentPosition: number | null;
@@ -55,6 +59,7 @@ type AudioPlayerContext = {
   outline: string[];
   dialogues: DialogueInfo[];
   currentDialogueId: number | null;
+  displayMode: DisplayMode;
   scrollActor: ActorRefFrom<typeof scrollMachine> | null;
   lyricActor: ActorRefFrom<typeof lyricMachine> | null;
   scrollEffect: (() => void) | null;
@@ -332,6 +337,14 @@ export const audioPlayerMachine = setup({
         // scrollToPosition logic
       }
     },
+    changeDisplayMode: assign({
+      displayMode: ({ context, event }) => {
+        if (event.type === "display.mode.change") {
+          return event.mode;
+        }
+        return context.displayMode;
+      }
+    }),
   },
 }).createMachine({
   id: "audioPlayer",
@@ -348,6 +361,7 @@ export const audioPlayerMachine = setup({
     outline: outline,
     dialogues: dialogues,
     currentDialogueId: null,
+    displayMode: "who-said-to-whom",
     scrollActor: null,
     lyricActor: null,
     scrollEffect: null,
@@ -573,6 +587,9 @@ export const audioPlayerMachine = setup({
                 },
                 "lyric.updated": {
                   actions: ["updateLyricIndices", "scrollToPosition"],
+                },
+                "display.mode.change": {
+                  actions: "changeDisplayMode",
                 },
               },
             },

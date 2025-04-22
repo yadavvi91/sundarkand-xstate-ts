@@ -100,8 +100,8 @@ export const lyricsPavan = [
 
   { time: 177, type: "samput", text: "दीन दयाल बिरिदु संभारी । हरहु नाथ मम संकट भारी ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
 
-  { time: 182, type: "doha", text: "कहेहु मुखागर मूढ़ सन मम संदेसु उदार ।", outlineIndex: 5, footnoteIds: [ 5 ] },
-  { time: 189, type: "doha", text: "सीता देइ मिलेहु न त आवा काल तुम्हार ॥52॥", outlineIndex: 5, footnoteIds: [ 5 ] },
+  { time: 182, type: "doha", text: "कहेहु मुखागर मूढ़ सन मम संदेसु उदार ।", outlineIndex: 5, footnoteIds: [ 5 ], translation: "फिर उस मूर्ख से जबानी यह मेरा उदार (कृपा से भरा हुआ) संदेश कहना कि सीताजी को देकर उनसे (श्री रामजी से) मिलो, नहीं तो तुम्हारा काल आ गया (समझो)॥52॥" },
+  { time: 189, type: "doha", text: "सीता देइ मिलेहु न त आवा काल तुम्हार ॥52॥", outlineIndex: 5, footnoteIds: [ 5 ], translation: "फिर उस मूर्ख से जबानी यह मेरा उदार (कृपा से भरा हुआ) संदेश कहना कि सीताजी को देकर उनसे (श्री रामजी से) मिलो, नहीं तो तुम्हारा काल आ गया (समझो)॥52॥" },
 
   { time: 195, type: "samput", text: "दीन दयाल बिरिदु संभारी । हरहु नाथ मम संकट भारी ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
 
@@ -116,13 +116,13 @@ export const lyricsPavan = [
 
   { time: 273, type: "samput", text: "दीन दयाल बिरिदु संभारी । हरहु नाथ मम संकट भारी ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
 
-  { time: 279, type: "doha", text: "की भइ भेंट कि फिरि गए श्रवन सुजसु सुनि मोर ।", outlineIndex: 5, footnoteIds: [ 5 ] },
-  { time: 285, type: "doha", text: "कहसि न रिपु दल तेज बल बहुत चकित चित तोर ॥53॥", outlineIndex: 5, footnoteIds: [ 5 ] },
+  { time: 279, type: "doha", text: "की भइ भेंट कि फिरि गए श्रवन सुजसु सुनि मोर ।", outlineIndex: 5, footnoteIds: [ 5 ], translation: "क्या उनसे भेंट हुई या केवल मेरा सुयश सुनकर वे लौट गए? तेरा चित्त बहुत चकित है, तू शत्रु दल के तेज और बल का वर्णन नहीं करता॥53॥" },
+  { time: 285, type: "doha", text: "कहसि न रिपु दल तेज बल बहुत चकित चित तोर ॥53॥", outlineIndex: 5, footnoteIds: [ 5 ], translation: "क्या उनसे भेंट हुई या केवल मेरा सुयश सुनकर वे लौट गए? तेरा चित्त बहुत चकित है, तू शत्रु दल के तेज और बल का वर्णन नहीं करता॥53॥" },
 
   { time: 291, type: "samput", text: "दीन दयाल बिरिदु संभारी । हरहु नाथ मम संकट भारी ॥", outlineIndex: 5, footnoteIds: [ 5 ] },
 
-  { time: 301, type: "chaupai", text: "नाथ कृपा करि पूँछेहु जैसें । मानहु कहा क्रोध तजि तैसें ॥", outlineIndex: 9, footnoteIds: [ 9 ] },
-  { time: 309, type: "chaupai", text: "मिला जाइ जब अनुज तुम्हारा । जातहिं राम तिलक तेहि सारा ॥", outlineIndex: 9, footnoteIds: [ 9 ] },
+  { time: 301, type: "chaupai", text: "नाथ कृपा करि पूँछेहु जैसें । मानहु कहा क्रोध तजि तैसें ॥", outlineIndex: 9, footnoteIds: [ 9 ], translation: "हे नाथ! जैसे आपने कृपा करके पूछा है, वैसे ही क्रोध त्यागकर मेरी बात मानिए।" },
+  { time: 309, type: "chaupai", text: "मिला जाइ जब अनुज तुम्हारा । जातहिं राम तिलक तेहि सारा ॥", outlineIndex: 9, footnoteIds: [ 9 ], translation: "जब आपका छोटा भाई (विभीषण) जाकर उनसे मिला, तब श्री रामजी ने उसी समय उसे राजतिलक कर दिया।" },
   { time: 320, type: "chaupai", text: "रावन दूत हमहि सुनि काना । कपिन्ह बाँधि दीन्हे दुख नाना ॥", outlineIndex: 9, footnoteIds: [ 9 ] },
   { time: 329, type: "chaupai", text: "श्रवन नासिका काटै लागे । राम सपथ दीन्हे हम त्यागे ॥", outlineIndex: 9, footnoteIds: [ 9 ] },
   { time: 334, type: "chaupai", text: "पूँछिहु नाथ राम कटकाई । बदन कोटि सत बरनि न जाई ॥", outlineIndex: 9, footnoteIds: [ 9 ] },
