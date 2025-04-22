@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useMachine } from "@xstate/react";
 import { audioPlayerMachine, Lyric } from "./improvedAudioPlayerMachine.ts";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
@@ -65,7 +65,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     // console.log("State changed", state.value, state.context);
   }, [state]);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     const audio = audioRef.current;
     if (
       state.matches({
@@ -78,48 +78,46 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       audio?.play();
       send({ type: "audio.resume" });
     }
-  };
+  }, [state, send]);
 
-  const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleManualScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     send({ type: "scroll.manual" });
-  };
+  }, [send]);
 
-  const handleForward = () => {
+  const handleForward = useCallback(() => {
     send({ type: "audio.forward" });
-  };
+  }, [send]);
 
-  const handleBackward = () => {
+  const handleBackward = useCallback(() => {
     send({ type: "audio.backward" });
-  };
+  }, [send]);
 
-  const isFirstOccurrence = (footnoteId: number, currentIndex: number) => {
+  const isFirstOccurrence = useCallback((footnoteId: number, currentIndex: number) => {
     return (
       state.context.lyrics.findIndex((lyric) =>
         lyric.footnoteIds.includes(footnoteId),
       ) === currentIndex
     );
-  };
+  }, [state.context.lyrics]);
 
-
-
-  const handleDialogueClick = (
+  const handleDialogueClick = useCallback((
     e: React.MouseEvent<HTMLElement, MouseEvent>,
     dialogueId: number,
   ) => {
     e.stopPropagation(); // Prevent triggering the lyric click event
     send({ type: "dialogue.click", dialogueId });
-  };
+  }, [send]);
 
 
 
-  function handleLyricClick(index: number, lyric: Lyric) {
+  const handleLyricClick = useCallback((index: number, lyric: Lyric) => {
     send({ type: "lyric.clicked", index });
     if (audioRef.current) {
       audioRef.current.currentTime = lyric.time;
     }
-  }
+  }, [send]);
 
-  function handleOutlineClick(index: number) {
+  const handleOutlineClick = useCallback((index: number) => {
     const firstLyricOfOutline = state.context.lyrics.find(
       (lyric) => lyric.outlineIndex === index,
     );
@@ -129,7 +127,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
         audioRef.current.currentTime = firstLyricOfOutline.time;
       }
     }
-  }
+  }, [state.context.lyrics, send]);
 
 
   return (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Lyric } from "../improvedAudioPlayerMachine";
 
 interface LyricRendererProps {
@@ -9,7 +9,7 @@ interface LyricRendererProps {
   onDialogueClick: (e: React.MouseEvent<HTMLElement, MouseEvent>, dialogueId: number) => void;
 }
 
-const LyricRenderer: React.FC<LyricRendererProps> = ({
+const LyricRenderer: React.FC<LyricRendererProps> = memo(({
   lyric,
   index,
   isFirstOccurrence,
@@ -277,6 +277,13 @@ const LyricRenderer: React.FC<LyricRendererProps> = ({
       </div>
     );
   }
-};
+}, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.lyric === nextProps.lyric &&
+    prevProps.index === nextProps.index &&
+    prevProps.currentDialogueId === nextProps.currentDialogueId
+  );
+});
 
 export default LyricRenderer;
