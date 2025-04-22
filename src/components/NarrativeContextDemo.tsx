@@ -6,28 +6,33 @@ const NarrativeContextDemo: React.FC = () => {
   // State for tracking current lyric and outline
   const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
   const [currentOutlineIndex, setCurrentOutlineIndex] = useState(0);
-  
+
   // Filter lyrics to show only the narrative context section (around time 389)
   // This is just for the demo to focus on the relevant verses
   const demoLyrics = enhancedLyricsVikesh.filter(
     lyric => lyric.time >= 367 && lyric.time <= 409
   );
-  
+
   // Handle lyric click
   const handleLyricClick = (index: number, lyric: any) => {
     setCurrentLyricIndex(index);
     setCurrentOutlineIndex(lyric.outlineIndex);
-    
+
     // Log for demonstration
     console.log(`Clicked lyric at time ${lyric.time}`);
     if (lyric.narrativeContext) {
       console.log('Narrative context:', lyric.narrativeContext);
     }
   };
-  
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Narrative Context Demo</h1>
+      <div className="bg-amber-100 border-l-4 border-amber-500 p-4 mb-6 rounded">
+        <h1 className="text-2xl font-bold mb-2">Narrative Context Demo</h1>
+        <p className="text-amber-800">
+          This is a demonstration of the narrative context feature. You can return to the main application using the button in the top-right corner.
+        </p>
+      </div>
       <p className="mb-4">
         This demo shows how to implement narrative context indicators and expandable panels
         for verses that represent narrative shifts in Sundarkand.
