@@ -715,6 +715,9 @@ export const audioPlayerMachine = setup({
                 "lyrics.filter.toggle": {
                   actions: ["toggleSamputFilter", "scrollToPosition"],
                 },
+                "data.loaded": {
+                  actions: ["setDuration"],
+                },
               },
             },
           },
