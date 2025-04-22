@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useMachine } from "@xstate/react";
-import { audioPlayerMachine, Lyric, DialogueInfo } from "./improvedAudioPlayerMachine.ts";
+import { audioPlayerMachine, Lyric } from "./improvedAudioPlayerMachine.ts";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
 import { createBrowserInspector } from "@statelyai/inspect";
-import AudioPlayer from "./components/AudioPlayer";
-import { MoreVertical, MessageSquare, Languages } from "lucide-react";
+import OutlinePanel from "./components/OutlinePanel";
+import LyricsPanel from "./components/LyricsPanel";
+import InfoPanel from "./components/InfoPanel";
 
 const { inspect } = createBrowserInspector();
 
@@ -13,7 +14,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const outlineContainerRef = useRef<HTMLDivElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const scrollEffect = ({ context, event }) => {
     if (context !== undefined) {
@@ -100,153 +100,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     );
   };
 
-  const ModeMenu = () => {
-    return (
-      <div className="relative">
-        <button 
-          className="text-gray-600 hover:text-gray-800 p-2"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <MoreVertical size={24} />
-        </button>
-
-        {menuOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-            <div className="py-1">
-              <button
-                className={`flex items-center px-4 py-2 text-sm w-full text-left ${state.context.displayMode === "who-said-to-whom" ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                onClick={() => {
-                  send({ type: "display.mode.change", mode: "who-said-to-whom" });
-                  setMenuOpen(false);
-                }}
-              >
-                <MessageSquare size={16} className="mr-2" />
-                Who Said to Whom
-              </button>
-              <button
-                className={`flex items-center px-4 py-2 text-sm w-full text-left ${state.context.displayMode === "translations" ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                onClick={() => {
-                  send({ type: "display.mode.change", mode: "translations" });
-                  setMenuOpen(false);
-                }}
-              >
-                <Languages size={16} className="mr-2" />
-                Translations
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const TranslationsDisplay = () => {
-    // Find lyrics with translations around the current lyric index
-    const currentIndex = state.context.currentLyricIndex;
-    const lyrics = state.context.lyrics;
-
-    // Look for translations in a window of 5 lyrics around the current one
-    const startIndex = Math.max(0, currentIndex - 2);
-    const endIndex = Math.min(lyrics.length - 1, currentIndex + 2);
-
-    // Find consecutive lyrics with translations
-    let translationGroups = [];
-    let currentGroup = [];
-
-    for (let i = startIndex; i <= endIndex; i++) {
-      const lyric = lyrics[i];
-      if (lyric.translation) {
-        // If this is a doha or sortha and the next one is also a doha or sortha with the same translation,
-        // they should be grouped together
-        if (
-          (lyric.type === "doha" || lyric.type === "sortha") &&
-          i < lyrics.length - 1 &&
-          (lyrics[i + 1].type === "doha" || lyrics[i + 1].type === "sortha") &&
-          lyrics[i + 1].translation === lyric.translation
-        ) {
-          currentGroup.push(lyric);
-        } else if (currentGroup.length > 0 && currentGroup[0].translation === lyric.translation) {
-          // If this lyric has the same translation as the current group, add it
-          currentGroup.push(lyric);
-        } else {
-          // Start a new group
-          if (currentGroup.length > 0) {
-            translationGroups.push([...currentGroup]);
-          }
-          currentGroup = [lyric];
-        }
-      }
-    }
-
-    // Add the last group if it exists
-    if (currentGroup.length > 0) {
-      translationGroups.push(currentGroup);
-    }
-
-    if (translationGroups.length === 0) {
-      return (
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Translations</h3>
-            <ModeMenu />
-          </div>
-          <div className="mb-2 p-4 rounded bg-yellow-100 text-center">
-            <p>No translations available for the current verses.</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">Translations</h3>
-          <ModeMenu />
-        </div>
-        {translationGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="mb-4 p-4 rounded bg-yellow-100">
-            <div className="mb-2">
-              {group.map((lyric, i) => (
-                <div key={i} className="mb-1">
-                  <p className="font-medium">{lyric.text}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-sm mt-2 border-t pt-2 border-yellow-200">{group[0].translation}</p>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const DialogueDisplay = () => {
-    const currentDialogue = state.context.dialogues.find(d => d.id === state.context.currentDialogueId);
-
-    if (!currentDialogue) return null;
-
-    return (
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">Who Said to Whom</h3>
-          <ModeMenu />
-        </div>
-        <div className="mb-2 p-4 rounded bg-green-100">
-          <div className="flex justify-between">
-            <div>
-              <span className="font-bold">{currentDialogue.speaker}</span> to <span className="font-bold">{currentDialogue.listener}</span>
-            </div>
-            <button 
-              className="text-gray-500 hover:text-gray-700"
-              onClick={() => send({ type: "dialogue.close" })}
-            >
-              ×
-            </button>
-          </div>
-          <p className="text-sm mt-2">{currentDialogue.description}</p>
-        </div>
-      </div>
-    );
-  };
 
 
   const handleDialogueClick = (
@@ -257,268 +110,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     send({ type: "dialogue.click", dialogueId });
   };
 
-  function splitOnSpaceExceptLast(str: string) {
-    // Find the last space in the string
-    const secondLastSpaceIndex = str.lastIndexOf(" ");
 
-    // If there's no space or only one space, return the string as the only element in an array
-    if (secondLastSpaceIndex === -1) {
-      return [str];
-    }
-
-    // Find the second-to-last space in the string
-    const lastSpaceIndex = str.lastIndexOf(" ", secondLastSpaceIndex - 1);
-
-    // Split the string into two parts: before the last space and after
-    const beforeLastSpace = str.slice(0, lastSpaceIndex);
-    const afterLastSpace = str.slice(lastSpaceIndex + 1);
-
-    // Split the part before the last space on spaces
-    const splitBeforeLastSpace = beforeLastSpace.split(" ");
-
-    // Combine the two parts
-    return [...splitBeforeLastSpace, afterLastSpace];
-  }
-
-  const renderLyric = (lyric: Lyric, index: number) => {
-    const footnoteIds = lyric.footnoteIds.reduce(
-      (acc: number[], footnoteId: number, i: number) => {
-        if (isFirstOccurrence(footnoteId, index)) {
-          acc.push(footnoteId);
-        }
-        return acc;
-      },
-      [],
-    );
-    const footnoteIndicator = null;
-
-    const hasDialogue = lyric.dialogueId !== undefined;
-    const dialogueIndicator = hasDialogue ? (
-      <div className="flex items-center">
-        <sup
-          className="text-green-500 cursor-pointer ml-1"
-          onClick={(e) => handleDialogueClick(e, lyric.dialogueId!)}
-        >
-          [👥]
-        </sup>
-      </div>
-    ) : null;
-
-    // For verses with partial dialogue
-    if (hasDialogue && lyric.dialogueTextRange) {
-      // Special case for the first verse at time 943
-      if (lyric.time === 943) {
-        const midPoint = lyric.text.indexOf("।");
-        const firstPart = lyric.text.slice(0, midPoint + 1);
-        const secondPart = lyric.text.slice(midPoint + 1);
-
-        return (
-          <div className="flex items-center style={{ minHeight: '2em' }}">
-            <div className="flex w-full px-2" style={{ width: "500px" }}>
-              <p className="w-[245px] flex justify-between">
-                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-              <p className={`w-[255px] flex justify-between pl-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
-                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-            </div>
-            <div className="w-[20px]">
-              {dialogueIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
-        );
-      }
-
-      // For the verse at time 123 (Sugriv's dialogue)
-      if (lyric.time === 123) {
-        const beforeDialogue = lyric.text.substring(0, lyric.dialogueTextRange.start);
-        const dialogueText = lyric.text.substring(lyric.dialogueTextRange.start, lyric.dialogueTextRange.end);
-
-        const midPoint = lyric.text.indexOf("।");
-        if (midPoint >= lyric.dialogueTextRange.start) {
-          // If the middle dot is within the dialogue part
-          const firstPart = lyric.text.slice(0, midPoint + 1);
-          const secondPart = lyric.text.slice(midPoint + 1);
-
-          return (
-            <div className="flex items-center style={{ minHeight: '2em' }}">
-              <div className="flex w-full px-2" style={{ width: "500px" }}>
-                <p className="w-[245px] flex justify-between">
-                  <span>{beforeDialogue}</span>
-                  <span className={`${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
-                    {firstPart.substring(beforeDialogue.length)}
-                  </span>
-                </p>
-                <p className={`w-[255px] flex justify-between pl-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}>
-                  {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                    <span key={i}>{word}</span>
-                  ))}
-                </p>
-              </div>
-              <div className="w-[20px]">
-                {dialogueIndicator}
-                {footnoteIndicator}
-              </div>
-            </div>
-          );
-        }
-      }
-    }
-
-    // For regular verses with full dialogue
-    if (hasDialogue && !lyric.dialogueTextRange) {
-      if (lyric.type === "doha" || lyric.type === "sortha") {
-        const pattern = /॥\d+॥/;
-        const isLine2 = pattern.test(lyric.text);
-        return (
-          <div className="flex items-center">
-            <p
-              className={`flex justify-between w-full px-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}
-              style={{ width: isLine2 ? "400px" : "370px" }}
-            >
-              {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
-                <span key={i}>{word}</span>
-              ))}
-            </p>
-            <div className="w-[20px]">
-              {dialogueIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
-        );
-      }
-      else if (lyric.type === "samput") {
-        const midPoint = lyric.text.indexOf("।");
-        const firstPart = lyric.text.slice(0, midPoint + 1);
-        const secondPart = lyric.text.slice(midPoint + 1) + "  ";
-        return (
-          <div className="flex items-center">
-            <div
-              className={`flex w-full px-2 italic text-gray-600 font-bold ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`}
-              style={{ width: "500px" }}
-            >
-              <p className="w-[245px] flex justify-between">
-                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-              <p className="w-[255px] flex justify-between pl-2">
-                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-            </div>
-            <div className="w-[20px]">
-              {dialogueIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
-        );
-      }
-      else {
-        const midPoint = lyric.text.indexOf("।");
-        const firstPart = lyric.text.slice(0, midPoint + 1);
-        const secondPart = lyric.text.slice(midPoint + 1) + "  ";
-        return (
-          <div className="flex items-center style={{ minHeight: '2em' }}">
-            <div className={`flex w-full px-2 ${state.context.currentDialogueId === lyric.dialogueId ? 'bg-green-300 bg-opacity-50' : ''}`} style={{ width: "500px" }}>
-              <p className="w-[245px] flex justify-between">
-                {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-              <p className="w-[255px] flex justify-between pl-2">
-                {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                  <span key={i}>{word}</span>
-                ))}
-              </p>
-            </div>
-            <div className="w-[20px]">
-              {dialogueIndicator}
-              {footnoteIndicator}
-            </div>
-          </div>
-        );
-      }
-    }
-
-    // For regular verses without dialogue
-    if (lyric.type === "doha" || lyric.type === "sortha") {
-      const pattern = /॥\d+॥/;
-      const isLine2 = pattern.test(lyric.text);
-      return (
-        <div className="flex items-center">
-          <p
-            className="flex justify-between w-full px-2"
-            style={{ width: isLine2 ? "400px" : "370px" }}
-          >
-            {splitOnSpaceExceptLast(lyric.text.trim()).map((word, i) => (
-              <span key={i}>{word}</span>
-            ))}
-          </p>
-          <div className="w-[20px]">
-            {footnoteIndicator}
-          </div>
-        </div>
-      );
-    }
-    else if (lyric.type === "samput") {
-      const midPoint = lyric.text.indexOf("।");
-      const firstPart = lyric.text.slice(0, midPoint + 1);
-      const secondPart = lyric.text.slice(midPoint + 1) + "  ";
-      return (
-        <div className="flex items-center">
-          <div
-            className="flex w-full px-2 italic text-gray-600 font-bold"
-            style={{ width: "500px" }}
-          >
-            <p className="w-[245px] flex justify-between">
-              {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                <span key={i}>{word}</span>
-              ))}
-            </p>
-            <p className="w-[255px] flex justify-between pl-2">
-              {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                <span key={i}>{word}</span>
-              ))}
-            </p>
-          </div>
-          <div className="w-[20px]">
-            {footnoteIndicator}
-          </div>
-        </div>
-      );
-    }
-    else {
-      const midPoint = lyric.text.indexOf("।");
-      const firstPart = lyric.text.slice(0, midPoint + 1);
-      const secondPart = lyric.text.slice(midPoint + 1) + "  ";
-      return (
-        <div className="flex items-center style={{ minHeight: '2em' }}">
-          <div className="flex w-full px-2" style={{ width: "500px" }}>
-            <p className="w-[245px] flex justify-between">
-              {splitOnSpaceExceptLast(firstPart.trim()).map((word, i) => (
-                <span key={i}>{word}</span>
-              ))}
-            </p>
-            <p className="w-[255px] flex justify-between pl-2">
-              {splitOnSpaceExceptLast(secondPart.trim()).map((word, i) => (
-                <span key={i}>{word}</span>
-              ))}
-            </p>
-          </div>
-          <div className="w-[20px]">
-            {footnoteIndicator}
-          </div>
-        </div>
-      );
-    }
-  };
 
   function handleLyricClick(index: number, lyric: Lyric) {
     send({ type: "lyric.clicked", index });
@@ -526,45 +118,6 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       audioRef.current.currentTime = lyric.time;
     }
   }
-
-  const renderLyrics = (lyrics: Lyric[]) => {
-    let currentOutline = -1;
-    return (
-      <div className="w-full flex flex-col items-center">
-        {lyrics.reduce((acc, lyric, index) => {
-          // we first add an outline <div>
-          // and then *inside* this <div> we add list of <div>s for lyrics with props.children.push()
-          if (lyric.outlineIndex !== currentOutline) {
-            currentOutline = lyric.outlineIndex;
-            acc.push(
-              <div
-                key={`outline-${lyric.outlineIndex}`}
-                id={`outline-${lyric.outlineIndex}`}
-                className={`w-full mb-4 p-2 ${
-                  lyric.outlineIndex === state.context.currentOutlineIndex
-                    ? "bg-blue-100"
-                    : ""
-                }`}
-              >
-                {[]}
-              </div>,
-            );
-          }
-          acc[acc.length - 1].props.children.push(
-            <div
-              key={index}
-              className={`text-lg cursor-pointer flex justify-center items-center w-full 
-                ${index === state.context.currentLyricIndex ? "bg-yellow-200" : ""}`}
-              onClick={() => handleLyricClick(index, lyric)}
-            >
-              {renderLyric(lyric, index)}
-            </div>,
-          );
-          return acc;
-        }, [] as React.ReactElement[])}
-      </div>
-    );
-  };
 
   function handleOutlineClick(index: number) {
     const firstLyricOfOutline = state.context.lyrics.find(
@@ -578,108 +131,74 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     }
   }
 
-  const renderOutline = (outline: string[]) => {
-    return (
-      <div
-        ref={outlineContainerRef}
-        className="w-[300px] bg-gray-100 p-4 overflow-y-auto border-r border-gray-200 outline-container"
-      >
-        <h3 className="font-bold mb-4 text-lg pl-4">प्रसंग</h3>
-        {outline.map((item, index) => (
-          <div
-            key={index}
-            className={`mb-2 text-sm cursor-pointer p-2 rounded pl-4 ${
-              index === state.context.currentOutlineIndex
-                ? "bg-blue-100"
-                : "hover:bg-gray-200"
-            }`}
-            onClick={() => handleOutlineClick(index)}
-          >
-            {item}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
 
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 absolute inset-0">
       <div className="flex w-full max-w-[1600px]">
-        {renderOutline(state.context.outline)}
-        <div
-          className="flex-grow p-8 overflow-y-auto flex flex-col items-center"
-          ref={lyricsContainerRef}
-          onScroll={(event) => handleManualScroll(event)}
-        >
-          <div className="w-full max-w-[1000px]">
-            <h2 className="text-4xl font-bold mb-8 text-center w-full">
-              सुंदरकाण्‍‍ड़
-            </h2>
-            {renderLyrics(state.context.lyrics)}
-          </div>
-        </div>
-        <div className="w-[400px] bg-white p-8 flex flex-col border-l border-gray-200">
-          <div className="flex-grow">
-            {state.context.displayMode === "who-said-to-whom" ? (
-              state.context.currentDialogueId ? (
-                <DialogueDisplay />
-              ) : (
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold">Who Said to Whom</h3>
-                    <ModeMenu />
-                  </div>
-                  <div className="mb-2 p-4 rounded bg-gray-100 text-center">
-                    <p>Click on a dialogue indicator [👥] in the text to see who said what to whom.</p>
-                  </div>
-                </div>
-              )
-            ) : (
-              <TranslationsDisplay />
-            )}
-          </div>
-          <AudioPlayer
-            ref={audioRef}
-            currentPosition={state.context.currentPosition || 0}
-            duration={state.context.duration}
-            volume={state.context.volume}
-            isPlaying={state.matches({
-              playing: { playback: "playing" },
-            })}
-            audioSrc={soundPavan}
-            imageSrc={hanumanji}
-            imageAlt="Hanumanji"
-            recitationTitle="Vikesh Bhaiyya Recitation June 15 2024"
-            onPlayPause={togglePlayPause}
-            onForward={handleForward}
-            onBackward={handleBackward}
-            onVolumeChange={(volume) => 
-              send({
-                type: "volume.change",
-                volume
-              })
+        <OutlinePanel
+          outline={state.context.outline}
+          currentOutlineIndex={state.context.currentOutlineIndex}
+          onOutlineClick={handleOutlineClick}
+          outlineContainerRef={outlineContainerRef}
+        />
+        <LyricsPanel
+          lyrics={state.context.lyrics}
+          currentLyricIndex={state.context.currentLyricIndex}
+          currentOutlineIndex={state.context.currentOutlineIndex}
+          lyricsContainerRef={lyricsContainerRef}
+          onLyricClick={handleLyricClick}
+          onManualScroll={handleManualScroll}
+          isFirstOccurrence={isFirstOccurrence}
+          currentDialogueId={state.context.currentDialogueId}
+          onDialogueClick={handleDialogueClick}
+        />
+        <InfoPanel
+          displayMode={state.context.displayMode}
+          currentDialogueId={state.context.currentDialogueId}
+          dialogues={state.context.dialogues}
+          lyrics={state.context.lyrics}
+          currentLyricIndex={state.context.currentLyricIndex}
+          onModeChange={(mode) => send({ type: "display.mode.change", mode })}
+          onDialogueClose={() => send({ type: "dialogue.close" })}
+          audioRef={audioRef}
+          currentPosition={state.context.currentPosition || 0}
+          duration={state.context.duration}
+          volume={state.context.volume}
+          isPlaying={state.matches({
+            playing: { playback: "playing" },
+          })}
+          audioSrc={soundPavan}
+          imageSrc={hanumanji}
+          imageAlt="Hanumanji"
+          recitationTitle="Vikesh Bhaiyya Recitation June 15 2024"
+          onPlayPause={togglePlayPause}
+          onForward={handleForward}
+          onBackward={handleBackward}
+          onVolumeChange={(volume) => 
+            send({
+              type: "volume.change",
+              volume
+            })
+          }
+          onProgressClick={(clickPosition) => {
+            const newTime = clickPosition * state.context.duration;
+            send({ type: "audio.seek", position: newTime });
+            send({ type: "audio.seek.complete" });
+            if (audioRef.current) {
+              audioRef.current.currentTime = newTime;
             }
-            onProgressClick={(clickPosition) => {
-              const newTime = clickPosition * state.context.duration;
-              send({ type: "audio.seek", position: newTime });
-              send({ type: "audio.seek.complete" });
-              if (audioRef.current) {
-                audioRef.current.currentTime = newTime;
-              }
-            }}
-            onTimeUpdate={(currentTime) => {
-              send({
-                type: "audio.time.update",
-                currentTime
-              });
-            }}
-            onLoadedMetadata={(duration) => {
-              send({ type: "data.loaded", duration });
-            }}
-            onEnded={() => send({ type: "audio.pause" })}
-          />
-        </div>
+          }}
+          onTimeUpdate={(currentTime) => {
+            send({
+              type: "audio.time.update",
+              currentTime
+            });
+          }}
+          onLoadedMetadata={(duration) => {
+            send({ type: "data.loaded", duration });
+          }}
+          onEnded={() => send({ type: "audio.pause" })}
+        />
       </div>
     </div>
   );
