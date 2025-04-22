@@ -1,5 +1,5 @@
 import { ActorRefFrom, assign, sendTo, setup } from "xstate";
-import { lyricsPavan, outline, dialogues } from "./utils/lyrics.ts";
+import { lyricsPavan, lyricsVikesh, outline, dialogues } from "./utils/lyrics.ts";
 
 // Event types using dot notation convention
 type AudioPlayerEvent =
@@ -21,7 +21,9 @@ type AudioPlayerEvent =
   | { type: "scroll.sync.needed" }
   | { type: "dialogue.click"; dialogueId: number }
   | { type: "dialogue.close" }
-  | { type: "display.mode.change"; mode: DisplayMode };
+  | { type: "display.mode.change"; mode: DisplayMode }
+  | { type: "lyrics.source.change"; source: LyricsSource }
+  | { type: "lyrics.filter.toggle"; showSamput: boolean };
 
 export interface DialogueInfo {
   id: number;
@@ -45,6 +47,7 @@ export interface Lyric {
 }
 
 type DisplayMode = "who-said-to-whom" | "translations";
+type LyricsSource = "pavan" | "vikesh";
 
 type AudioPlayerContext = {
   currentPosition: number | null;
@@ -60,6 +63,8 @@ type AudioPlayerContext = {
   dialogues: DialogueInfo[];
   currentDialogueId: number | null;
   displayMode: DisplayMode;
+  lyricsSource: LyricsSource;
+  showSamput: boolean;
   scrollActor: ActorRefFrom<typeof scrollMachine> | null;
   lyricActor: ActorRefFrom<typeof lyricMachine> | null;
   scrollEffect: (() => void) | null;
@@ -345,6 +350,52 @@ export const audioPlayerMachine = setup({
         return context.displayMode;
       }
     }),
+    changeLyricsSource: assign({
+      lyricsSource: ({ context, event }) => {
+        if (event.type === "lyrics.source.change") {
+          return event.source;
+        }
+        return context.lyricsSource;
+      },
+      lyrics: ({ context, event }) => {
+        if (event.type === "lyrics.source.change") {
+          const source = event.source;
+          const showSamput = context.showSamput;
+
+          // Get the appropriate lyrics based on the source
+          const sourceLyrics = source === "pavan" ? lyricsPavan : lyricsVikesh;
+
+          // Filter out samput lyrics if showSamput is false
+          return showSamput 
+            ? sourceLyrics 
+            : sourceLyrics.filter(lyric => lyric.type !== "samput");
+        }
+        return context.lyrics;
+      }
+    }),
+    toggleSamputFilter: assign({
+      showSamput: ({ context, event }) => {
+        if (event.type === "lyrics.filter.toggle") {
+          return event.showSamput;
+        }
+        return context.showSamput;
+      },
+      lyrics: ({ context, event }) => {
+        if (event.type === "lyrics.filter.toggle") {
+          const showSamput = event.showSamput;
+          const source = context.lyricsSource;
+
+          // Get the appropriate lyrics based on the source
+          const sourceLyrics = source === "pavan" ? lyricsPavan : lyricsVikesh;
+
+          // Filter out samput lyrics if showSamput is false
+          return showSamput 
+            ? sourceLyrics 
+            : sourceLyrics.filter(lyric => lyric.type !== "samput");
+        }
+        return context.lyrics;
+      }
+    }),
   },
 }).createMachine({
   id: "audioPlayer",
@@ -362,6 +413,8 @@ export const audioPlayerMachine = setup({
     dialogues: dialogues,
     currentDialogueId: null,
     displayMode: "who-said-to-whom",
+    lyricsSource: "pavan",
+    showSamput: true,
     scrollActor: null,
     lyricActor: null,
     scrollEffect: null,
@@ -590,6 +643,12 @@ export const audioPlayerMachine = setup({
                 },
                 "display.mode.change": {
                   actions: "changeDisplayMode",
+                },
+                "lyrics.source.change": {
+                  actions: ["changeLyricsSource", "scrollToPosition"],
+                },
+                "lyrics.filter.toggle": {
+                  actions: ["toggleSamputFilter", "scrollToPosition"],
                 },
               },
             },

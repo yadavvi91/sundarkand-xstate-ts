@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { useMachine } from "@xstate/react";
 import { audioPlayerMachine, Lyric } from "./improvedAudioPlayerMachine.ts";
 import soundPavan from "./assets/pavan-dec23-2024.wav";
+import soundVikesh from "./assets/vikesh-june15-2024.wav";
 import hanumanji from "./assets/hanumanji.jpg";
 import { createBrowserInspector } from "@statelyai/inspect";
 import OutlinePanel from "./components/OutlinePanel";
@@ -165,10 +166,14 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
           isPlaying={state.matches({
             playing: { playback: "playing" },
           })}
-          audioSrc={soundPavan}
+          audioSrc={state.context.lyricsSource === "pavan" ? soundPavan : soundVikesh}
           imageSrc={hanumanji}
           imageAlt="Hanumanji"
-          recitationTitle="Vikesh Bhaiyya Recitation June 15 2024"
+          recitationTitle={state.context.lyricsSource === "pavan" ? "Pavan Bhaiyya Recitation Dec 23 2024" : "Vikesh Bhaiyya Recitation June 15 2024"}
+          lyricsSource={state.context.lyricsSource}
+          showSamput={state.context.showSamput}
+          onLyricsSourceChange={(source) => send({ type: "lyrics.source.change", source })}
+          onSamputFilterToggle={(showSamput) => send({ type: "lyrics.filter.toggle", showSamput })}
           onPlayPause={togglePlayPause}
           onForward={handleForward}
           onBackward={handleBackward}

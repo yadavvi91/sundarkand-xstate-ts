@@ -7,13 +7,21 @@ interface TranslationsDisplayProps {
   currentLyricIndex: number;
   onModeChange: (mode: "who-said-to-whom" | "translations") => void;
   currentMode: "who-said-to-whom" | "translations";
+  lyricsSource: "pavan" | "vikesh";
+  showSamput: boolean;
+  onLyricsSourceChange: (source: "pavan" | "vikesh") => void;
+  onSamputFilterToggle: (showSamput: boolean) => void;
 }
 
 const TranslationsDisplay: React.FC<TranslationsDisplayProps> = ({
   lyrics,
   currentLyricIndex,
   onModeChange,
-  currentMode
+  currentMode,
+  lyricsSource,
+  showSamput,
+  onLyricsSourceChange,
+  onSamputFilterToggle
 }) => {
   // Find lyrics with translations around the current lyric index
   const startIndex = Math.max(0, currentLyricIndex - 2);
@@ -58,7 +66,14 @@ const TranslationsDisplay: React.FC<TranslationsDisplayProps> = ({
       <div className="mb-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Translations</h3>
-          <ModeMenu currentMode={currentMode} onModeChange={onModeChange} />
+          <ModeMenu 
+            currentMode={currentMode} 
+            onModeChange={onModeChange}
+            lyricsSource={lyricsSource}
+            showSamput={showSamput}
+            onLyricsSourceChange={onLyricsSourceChange}
+            onSamputFilterToggle={onSamputFilterToggle}
+          />
         </div>
         <div className="mb-2 p-4 rounded bg-yellow-100 text-center">
           <p>No translations available for the current verses.</p>
@@ -71,7 +86,14 @@ const TranslationsDisplay: React.FC<TranslationsDisplayProps> = ({
     <div className="mb-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-bold">Translations</h3>
-        <ModeMenu currentMode={currentMode} onModeChange={onModeChange} />
+        <ModeMenu 
+          currentMode={currentMode} 
+          onModeChange={onModeChange}
+          lyricsSource={lyricsSource}
+          showSamput={showSamput}
+          onLyricsSourceChange={onLyricsSourceChange}
+          onSamputFilterToggle={onSamputFilterToggle}
+        />
       </div>
       {translationGroups.map((group, groupIndex) => (
         <div key={groupIndex} className="mb-4 p-4 rounded bg-yellow-100">

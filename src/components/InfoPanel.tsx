@@ -22,6 +22,10 @@ interface InfoPanelProps {
   imageSrc: string;
   imageAlt: string;
   recitationTitle: string;
+  lyricsSource: "pavan" | "vikesh";
+  showSamput: boolean;
+  onLyricsSourceChange: (source: "pavan" | "vikesh") => void;
+  onSamputFilterToggle: (showSamput: boolean) => void;
   onPlayPause: () => void;
   onForward: () => void;
   onBackward: () => void;
@@ -49,6 +53,10 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
   imageSrc,
   imageAlt,
   recitationTitle,
+  lyricsSource,
+  showSamput,
+  onLyricsSourceChange,
+  onSamputFilterToggle,
   onPlayPause,
   onForward,
   onBackward,
@@ -70,12 +78,23 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
               onClose={onDialogueClose} 
               onModeChange={onModeChange}
               currentMode={displayMode}
+              lyricsSource={lyricsSource}
+              showSamput={showSamput}
+              onLyricsSourceChange={onLyricsSourceChange}
+              onSamputFilterToggle={onSamputFilterToggle}
             />
           ) : (
             <div className="mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold">Who Said to Whom</h3>
-                <ModeMenu currentMode={displayMode} onModeChange={onModeChange} />
+                <ModeMenu 
+                  currentMode={displayMode} 
+                  onModeChange={onModeChange}
+                  lyricsSource={lyricsSource}
+                  showSamput={showSamput}
+                  onLyricsSourceChange={onLyricsSourceChange}
+                  onSamputFilterToggle={onSamputFilterToggle}
+                />
               </div>
               <div className="mb-2 p-4 rounded bg-gray-100 text-center">
                 <p>Click on a dialogue indicator [👥] in the text to see who said what to whom.</p>
@@ -88,6 +107,10 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
             currentLyricIndex={currentLyricIndex} 
             onModeChange={onModeChange}
             currentMode={displayMode}
+            lyricsSource={lyricsSource}
+            showSamput={showSamput}
+            onLyricsSourceChange={onLyricsSourceChange}
+            onSamputFilterToggle={onSamputFilterToggle}
           />
         )}
       </div>

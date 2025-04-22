@@ -1,12 +1,23 @@
 import React, { useState } from "react";
-import { MoreVertical, MessageSquare, Languages } from "lucide-react";
+import { MoreVertical, MessageSquare, Languages, Music, Eye, EyeOff, Mic } from "lucide-react";
 
 interface ModeMenuProps {
   currentMode: "who-said-to-whom" | "translations";
   onModeChange: (mode: "who-said-to-whom" | "translations") => void;
+  lyricsSource: "pavan" | "vikesh";
+  showSamput: boolean;
+  onLyricsSourceChange: (source: "pavan" | "vikesh") => void;
+  onSamputFilterToggle: (showSamput: boolean) => void;
 }
 
-const ModeMenu: React.FC<ModeMenuProps> = ({ currentMode, onModeChange }) => {
+const ModeMenu: React.FC<ModeMenuProps> = ({ 
+  currentMode, 
+  onModeChange,
+  lyricsSource,
+  showSamput,
+  onLyricsSourceChange,
+  onSamputFilterToggle
+}) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
