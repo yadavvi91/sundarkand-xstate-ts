@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useMachine } from "@xstate/react";
-import { audioPlayerMachine, Lyric } from "./newAudioPlayerMachine.ts"; // Assume this is imported from your machine file
+import { audioPlayerMachine, Lyric } from "./improvedAudioPlayerMachine.ts";
 import {
   Play,
   Pause,
@@ -59,7 +59,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
 
   const [state, send] = useMachine(
     audioPlayerMachine.provide({
-      actions: { scrollToAPositionEffect: scrollEffect },
+      actions: { scrollToPosition: scrollEffect },
     }),
     {
       inspect,
@@ -75,19 +75,19 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
     const audio = audioRef.current;
     if (
       state.matches({
-        playingSundarkand: { "audio playing states": "playingAudio" },
+        playing: { playback: "playing" },
       })
     ) {
       audio?.pause();
-      send({ type: "pause" });
+      send({ type: "audio.pause" });
     } else {
       audio?.play();
-      send({ type: "play_after_pause" });
+      send({ type: "audio.resume" });
     }
   };
 
   const handleManualScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    send({ type: "manual_scroll" });
+    send({ type: "scroll.manual" });
   };
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressRef.current || !audioRef.current) return;
@@ -98,22 +98,22 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       progressBar.offsetWidth;
     const newTime = clickPosition * state.context.duration;
 
-    send({ type: "seek", position: newTime });
-    send({ type: "seek_complete" });
+    send({ type: "audio.seek", position: newTime });
+    send({ type: "audio.seek.complete" });
     audioRef.current.currentTime = newTime;
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
-    send({ type: "change_volume", volume: newVolume });
+    send({ type: "volume.change", volume: newVolume });
   };
 
   const handleForward = () => {
-    send({ type: "forward" });
+    send({ type: "audio.forward" });
   };
 
   const handleBackward = () => {
-    send({ type: "backward" });
+    send({ type: "audio.backward" });
   };
 
   const isFirstOccurrence = (footnoteId: number, currentIndex: number) => {
@@ -260,7 +260,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
   };
 
   function handleLyricClick(index: number, lyric: Lyric) {
-    send({ type: "click_lyric", index });
+    send({ type: "lyric.clicked", index });
     if (audioRef.current) {
       audioRef.current.currentTime = lyric.time;
     }
@@ -310,7 +310,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
       (lyric) => lyric.outlineIndex === index,
     );
     if (firstLyricOfOutline) {
-      send({ type: "seek", position: firstLyricOfOutline.time });
+      send({ type: "audio.seek", position: firstLyricOfOutline.time });
       if (audioRef.current) {
         audioRef.current.currentTime = firstLyricOfOutline.time;
       }
@@ -349,13 +349,13 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
 
   const handleTimeUpdate = () => {
     send({
-      type: "time_update",
+      type: "audio.time.update",
       currentTime: audioRef.current?.currentTime || 0,
     });
   };
 
   const handleLoadedMetadata = () => {
-    send({ type: "data_loaded", duration: audioRef.current?.duration || 0 });
+    send({ type: "data.loaded", duration: audioRef.current?.duration || 0 });
   };
 
   return (
@@ -419,7 +419,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
               className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
             >
               {state.matches({
-                playingSundarkand: { "audio playing states": "playingAudio" },
+                playing: { playback: "playing" },
               }) ? (
                 <Pause size={20} />
               ) : (
@@ -435,7 +435,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             <button
               onClick={() =>
                 send({
-                  type: "change_volume",
+                  type: "volume.change",
                   volume: state.context.volume === 0 ? 1 : 0,
                 })
               }
@@ -466,7 +466,7 @@ const AudioPlayerWithLyricsAndOutline: React.FC = () => {
             onLoadedMetadata={() => {
               handleLoadedMetadata();
             }}
-            onEnded={() => send({ type: "pause" })}
+            onEnded={() => send({ type: "audio.pause" })}
           />
         </div>
       </div>

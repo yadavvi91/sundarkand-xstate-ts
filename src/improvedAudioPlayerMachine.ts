@@ -1,23 +1,24 @@
 import { ActorRefFrom, assign, sendTo, setup } from "xstate";
 import { lyricsPavan, outline } from "./utils/lyrics.ts";
 
+// Event types using dot notation convention
 type AudioPlayerEvent =
-  | { type: "data_loading_started" }
-  | { type: "data_loaded"; duration: number }
-  | { type: "play_audio" }
-  | { type: "play_after_pause" }
-  | { type: "pause" }
-  | { type: "forward" }
-  | { type: "backward" }
-  | { type: "seek"; position: number }
-  | { type: "seek_complete" }
-  | { type: "seek_failed" }
-  | { type: "time_update"; currentTime: number }
-  | { type: "click_lyric"; index: number }
-  | { type: "lyric_update"; index: number; outlineIndex: number }
-  | { type: "manual_scroll" }
-  | { type: "change_volume"; volume: number }
-  | { type: "abcd" };
+  | { type: "data.loading.started" }
+  | { type: "data.loaded"; duration: number }
+  | { type: "audio.play" }
+  | { type: "audio.resume" }
+  | { type: "audio.pause" }
+  | { type: "audio.forward" }
+  | { type: "audio.backward" }
+  | { type: "audio.seek"; position: number }
+  | { type: "audio.seek.complete" }
+  | { type: "audio.seek.failed" }
+  | { type: "audio.time.update"; currentTime: number }
+  | { type: "lyric.clicked"; index: number }
+  | { type: "lyric.updated"; index: number; outlineIndex: number }
+  | { type: "scroll.manual" }
+  | { type: "volume.change"; volume: number }
+  | { type: "scroll.sync.needed" };
 
 export interface Lyric {
   time: number;
@@ -44,20 +45,22 @@ type AudioPlayerContext = {
 };
 
 // Actor Machines
-type ScrollMachineEvent = { type: "SCROLL" };
+type ScrollMachineEvent = { type: "scroll.requested" };
 
 const scrollMachine = setup({
-  types: {} as {
-    events: ScrollMachineEvent;
+  types: {
+    context: {} as { lastScrollTime: number },
+    events: {} as ScrollMachineEvent,
+    emitted: {} as { type: "scroll.sync.needed" }
   },
   actions: {
-    scrollAgain: sendTo(
+    notifyParentOfScrollChange: sendTo(
       ({ system }) => {
         return system.get("root");
       },
       ({ context, event }) => {
         return {
-          type: "abcd",
+          type: "scroll.sync.needed",
         };
       },
     ),
@@ -65,25 +68,31 @@ const scrollMachine = setup({
 }).createMachine({
   id: "scroll",
   initial: "idle",
+  context: {
+    lastScrollTime: 0
+  },
   states: {
     idle: {
       entry: [
         {
-          type: "scrollAgain",
-          params: { msg: "seeking to a position" },
+          type: "notifyParentOfScrollChange",
+          params: { msg: "notifying parent of scroll change" },
         },
       ],
-      on: { SCROLL: "scrolling" },
+      on: { "scroll.requested": "scrolling" },
     },
     scrolling: {
       after: {
         15000: "idle",
       },
       on: {
-        SCROLL: {
+        "scroll.requested": {
           target: "scrolling",
           internal: true,
           reenter: true,
+          actions: assign({
+            lastScrollTime: () => Date.now()
+          })
         },
       },
     },
@@ -92,27 +101,28 @@ const scrollMachine = setup({
 
 type LyricMachineEvent =
   | {
-      type: "UPDATE";
+      type: "lyric.update";
       index: number;
       outlineIndex: number;
     }
-  | { type: "data_loading_started" }
-  | { type: "data_loaded"; duration: number }
-  | { type: "play_audio" };
+  | { type: "data.loading.started" }
+  | { type: "data.loaded"; duration: number }
+  | { type: "audio.play" };
+
 type LyricMachineContext = {
   currentLyricIndex: number;
   currentOutlineIndex: number;
 };
 
 const lyricMachine = setup({
-  types: {} as {
-    context: LyricMachineContext;
-    events: LyricMachineEvent;
-    emitted: { type: "lyric_update"; index: number; outlineIndex: number };
+  types: {
+    context: {} as LyricMachineContext,
+    events: {} as LyricMachineEvent,
+    emitted: {} as { type: "lyric.updated"; index: number; outlineIndex: number },
   },
   actions: {
     updateLyricIndices: ({ context, event }) => {
-      if (event.type === "UPDATE") {
+      if (event.type === "lyric.update") {
         context.currentLyricIndex = event.index;
         context.currentOutlineIndex = event.outlineIndex;
       }
@@ -123,7 +133,7 @@ const lyricMachine = setup({
       },
       ({ context, event }) => {
         return {
-          type: "lyric_update",
+          type: "lyric.updated",
           index: context.currentLyricIndex,
           outlineIndex: context.currentOutlineIndex,
         };
@@ -131,18 +141,16 @@ const lyricMachine = setup({
     ),
   },
 }).createMachine({
-  id: "lyricMachine",
+  id: "lyricTracker",
   context: {
     currentLyricIndex: 0,
     currentOutlineIndex: 0,
-    emitter: { emit: () => {} }, // This will be replaced by the actual emitter when spawned
   },
-  initial: "idle",
+  initial: "tracking",
   states: {
-    idle: {
+    tracking: {
       on: {
-        UPDATE: {
-          // actions: ["updateLyricIndices", "notifyParent"],
+        "lyric.update": {
           actions: ["updateLyricIndices", "emitLyricUpdate"],
         },
       },
@@ -151,23 +159,14 @@ const lyricMachine = setup({
 });
 
 export const audioPlayerMachine = setup({
-  types: {} as {
-    context: AudioPlayerContext;
-    events: AudioPlayerEvent;
+  types: {
+    context: {} as AudioPlayerContext,
+    events: {} as AudioPlayerEvent,
   },
   actions: {
-    // spawnActors: ({ spawn, context, event }, params) => {
-    //   context.scrollActor = spawn(scrollMachine);
-    //   context.lyricActor = spawn(lyricMachine);
-    // },
-    // setDuration: ({ context, event }) => {
-    //   if (event.type === "data_loaded") {
-    //     context.duration = event.duration;
-    //   }
-    // },
     setDuration: assign({
       duration: ({ context, event }) => {
-        if (event.type === "data_loaded") {
+        if (event.type === "data.loaded") {
           return event.duration;
         }
         return context.duration;
@@ -179,20 +178,6 @@ export const audioPlayerMachine = setup({
     showStartPlayingToast: ({ context, event }) => {
       console.log("Start playing toast", context, event);
     },
-    // loadInitialIndices: ({ context, event }) => {
-    //   console.log("Start playing toast", context, event);
-    //   const newLyricIndex = findLyricIndex(
-    //     context.lyrics,
-    //     context.currentPosition || 0,
-    //   );
-    //   const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
-    //
-    //   return {
-    //     type: "UPDATE",
-    //     index: newLyricIndex,
-    //     outlineIndex: newOutlineIndex,
-    //   };
-    // },
     loadInitialIndices: assign({
       currentLyricIndex: ({ context, event }) => {
         const newLyricIndex = findLyricIndex(
@@ -210,15 +195,11 @@ export const audioPlayerMachine = setup({
         return newOutlineIndex;
       },
     }),
-    // startPlayingSundarKand: ({ context, event }) => {
-    //   console.log("Start Playing Sundarkand", context, event);
-    //   // send({ type: "play_audio" });
-    // },
-    showForwardingToast: ({ context, event }) => {
-      console.log("Show forwarding toast", context, event);
+    showForwardToast: ({ context, event }) => {
+      console.log("Show forward toast", context, event);
     },
-    showBackwardingToast: ({ context, event }) => {
-      console.log("Show backwarding toast", context, event);
+    showBackwardToast: ({ context, event }) => {
+      console.log("Show backward toast", context, event);
     },
     hideToast: ({ context, event }) => {
       console.log("Hide toast", context, event);
@@ -229,14 +210,14 @@ export const audioPlayerMachine = setup({
     hideSeekingToast: ({ context, event }) => {
       console.log("Hide seeking toast", context, event);
     },
-    scrollToAPosition: ({ context, event }) => {
+    scrollToPosition: ({ context, event }) => {
       if (context.scrollEffect) {
         context.scrollEffect();
       }
     },
     updateSeekPosition: assign({
       seekPosition: ({ context, event }) => {
-        return event.type === "seek" ? event.position : context.seekPosition;
+        return event.type === "audio.seek" ? event.position : context.seekPosition;
       },
     }),
     updateCurrentPosition: assign({
@@ -249,7 +230,7 @@ export const audioPlayerMachine = setup({
     }),
     updateTime: assign({
       currentPosition: ({ context, event }) => {
-        if (event.type === "time_update") {
+        if (event.type === "audio.time.update") {
           return event.currentTime;
         }
         return context.currentPosition;
@@ -257,7 +238,7 @@ export const audioPlayerMachine = setup({
     }),
     updateVolume: assign({
       volume: ({ context, event }) => {
-        if (event.type === "change_volume") {
+        if (event.type === "volume.change") {
           return event.volume;
         }
         return context.volume;
@@ -277,7 +258,7 @@ export const audioPlayerMachine = setup({
         const newOutlineIndex = findOutlineIndex(context.lyrics, newLyricIndex);
 
         return {
-          type: "UPDATE",
+          type: "lyric.update",
           index: newLyricIndex,
           outlineIndex: newOutlineIndex,
         };
@@ -286,50 +267,46 @@ export const audioPlayerMachine = setup({
     handleLyricClick: sendTo(
       ({ context }) => context.lyricActor,
       ({ context, event }) => {
-        if (event?.type === "click_lyric") {
+        if (event?.type === "lyric.clicked") {
           return {
-            type: "UPDATE",
+            type: "lyric.update",
             index: event?.index,
             outlineIndex: findOutlineIndex(context.lyrics, event?.index),
           };
         }
-        return { type: "NOOP" };
+        return { type: "noop" };
       },
     ),
-    // triggerManualScroll: ({ context }) => {
-    //   context.scrollActor?.send({ type: "SCROLL" });
-    // },
     triggerManualScroll: sendTo(
       ({ context }) => context.scrollActor,
       ({ context, event }) => {
-        return { type: "SCROLL" };
+        return { type: "scroll.requested" };
       },
     ),
     updateLyricIndices: assign({
       currentLyricIndex: ({ context, event }) => {
-        return event.type === "lyric_update"
+        return event.type === "lyric.updated"
           ? event.index
           : context.currentLyricIndex;
       },
       currentOutlineIndex: ({ context, event }) => {
-        return event.type === "lyric_update"
+        return event.type === "lyric.updated"
           ? event.outlineIndex
           : context.currentOutlineIndex;
       },
     }),
-    doAbcd: ({ context, event }) => {
-      console.log(`doAbcd: ${event}`);
+    handleScrollSync: ({ context, event }) => {
+      console.log(`Handling scroll synchronization: ${event}`);
       const scrollState = context.scrollActor?.getSnapshot();
       if (scrollState?.matches("scrolling")) {
         // do nothing
         console.log(`scrollState: ${scrollState}`);
       } else {
-        // scrollToAPositionEffect(context, event);
+        // scrollToPosition logic
       }
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEMCuECWB7ACgG2QE8wAnAOgDssARZAF2QGIJ7kB9PLZTCqN2BiTqQA2gAYAuolAAHLLAx1sFaSAAeiAIwAWABxkxAdl2aATAFYANCEKITZcwF9H1tJlwFi5KrQbNWHFwQopKqcgpKWCpI6lp6BsZmVjZa5gDMDtoAbLqGTi4gbtj4RKRkLAwAwlgAtjJ4YMJ4hAAyQZCM9URsRVjiUjHhisqqGgjmpta2CJppeWSGaQCcWbO65mJLmppZzq7oxZ5lFcjVdQ1Nre0QjGoC9GBkyABmwiQAFJpiYgCUjL0lLzlVhneqNMDNNrcEIDWTyYZRUaILKTFIIJZpDKmbR6UymTS6bTY7RLPaFA4eUrkLqEDC8ADKqAoLBIAGtkMynhSAAQ0ulQbn3YSwMh83gAQQpnTQsDA-TC8Mi0VAY3M6TIJgsUy0YiJCyy5gNas0eUSZIBR2pnn5jOZyDZHIgXPcvOtvEFDGFordUEl7kYzywJAA7vaIPLBoqRjExkttGIyKYxGkktqZmJtmQ0rpTIS0hnTSZzRTAWUxVBbSz2Zzeq6iPyPQ8ReW-dhGAAjZAAY1ZoZI4dCkYi0ZViAxCaTKa1aK25jIRKWhgJBfMZoKFqp3vrDKZVcdzuwddp7qFcC3x99UtlYFZEbhw8RMbHScTydTaN0WW0ZCWpkXy5NVci3XEtLXPG1d3tasnVrctGy9FspSUGowDYVAZAqOVB3vBFlViBAsiyDIFxyPI0xWfR1jjMRjULTRi3cUsrW3CtIIdGseTg09mx9VssEYLsAAsORgNgADcsDwVAULvEAhiVJECPmTFzAxMiP0MUwfzEFFdBowC132RiwPLSsoP3WCfXgs9EP9ZB2y7AdYTkqNH1HAjDQMFFkmmPIEw2b583MAzgKMw5N1MtjoIPLAjwbbjRRlSA+M6TweleUg2BkJLZPkkd8O0ZT32mL4MUTA0jWCuiGPCoFIrtdiYM4qyEuy1BZQgFLAxDMNctcvDYxfSdiq0SdE10JZNnzEL6JA4yIp9MzGpiuKT09Gyks6qVOx7PsnIVB8BrHeNXynHytC+QwszSVSchXQzyXmurFqiizmpY6zm02lLr1vbCXMOxTfwnN9p2mFElgWAKgpmmrKWeliluiyyPta76kIwFC0Iwh4+sBp8EFMIiHGWHSwbHYmqPjWigNmsL4bLF6GuR96L0+xL2uSqUhJE1CJKkmT-rytz8NMeYcXSEaEE-K7Jt0-Tqrm2rGcR16OJdLj1q+zmtrshz9qHXDFIsLIyBNAl1N87Q5wC5MFdpuGmPAndmf3WBBKwYMjwAWja2VuToLgBDIQSMAgYIKADIM9rxo2CdmHYszl8mZmWU2zphxX6ad+q905d3PZ9v2wADoO6BDsOI47bte16oX+sUhP0+T86Zj-fQM-th6NwRi8kbdj2vZpX2ktL5Bg4L4N+QAMWjsMABUy6jnr+1jhT442TQNRzTVW7WLSsk2amqodpWGeYvu1adSei9HwPx-LyeZ7n-tF4f25TyeDKPgCv4e5Vy+rt86D1vpzMeE9B7PxXhAN+Ag175TGE3JOZM95pHiLvTOp9s4mSZnna+IDh7F3AY-SBvAABCNc9qwLoNXXaddnLCyOjMDYWlNBLElinbY2gMiH2ojTbuoEFqqyAfgwuhC75lzIE-chlCF5LzuOtL+bx3i-3+II3uEERFSIIZ4EeYD74QM9vyChdDX5l3gSLRBKZm4oLTEkBMGCu6hUesrC+mi8HaMLr9YhZAw4NEYL9CxTDNDmF0BkWxaIsiGEht8CY2Z1ibG2PkbBQjAEeJvt4gxj8wA3n5AEnJrI2BdlqGCYQQTG7ZFNnobhls7AWHnKEtIREElbBCY7HBwj0kgMyZI36eTfpsGeMgDADQDY4XXu5HQhF5x5lqQgTSkMNhxN0C0pJ7TUnuPMpyZoJAMBdm5HSN43YlS+IgP4rseA9mFJ2Xs8pBMibfhzKDPeoTvzeTtifART0AGbOWjc-ZhzSDHOUKc-xNQOSoGQHgfgXYSCSTwHc9yRNTbmGyLkPeeh9BRLYTRT5zj-5uJdh4-5ByKBHK7CcvxYBGD-OxphRFotPLm3RXYpppsiaGjVHi2aBQqDBHgDEAlB047uW9lkNMYr1lAh8KwYVEyCqommCs+cOxCJqvVVEqVxxWBQh4FAOVCDEBNO-NUuYrccxavICcUEFwIRXGhBAA1ljEB-khuws6diTrJJcefZ2rERFOuCYfM2S4WVog2N+WJph4kbFad6glfr+7q0PJrJsgbjZiH0MyuZBp9DfECk4umPqc64K2U1DWLUtZ+r4umgmORTYRJKpsdlFUuWwzPiWzpZaVqpoQujdwtakXrDIBVThiTyqcv4fi9RPyiXdpvuI-RZdB34S4ZDNIuYpZfCZUfXF7aUkaLnctBduiiFZIruHMAeFGGNzYVdDdu9WV6myBYTBxhTCWsTVfTxQ9T0SIfj+qBVDl2G3lYgwqWkiQWwxWEhw3k33Tu+YS-1XSxF-qXQB6RUATG1zMQ-Fd4HNLznxGGkqxI4OvsLZ+3O87ukFOIQRi6qKsybpTqpLeSzo0rNjWsjtHS0m0a8fR89VLGMzDuiOlOeQ5zRoAjdRJbS+MbKPdFDJwnekFP5GJswYgtIPqlnpRZsx9LybjdR0tfzCC7IBWSoFFL8o3vuZmkN0G7Fi30IYVtU6i0Jpo5Z6zpLyWUrOWAMTKYPNQdI1oRY+hqnH3bc4IAA */
   id: "audioPlayer",
   context: {
     currentPosition: 0,
@@ -346,13 +323,13 @@ export const audioPlayerMachine = setup({
     lyricActor: null,
     scrollEffect: null,
   },
-  initial: "noData",
+  initial: "initializing",
   states: {
-    noData: {
+    initializing: {
       on: {
-        data_loading_started: "dataLoading",
-        data_loaded: {
-          target: "dataCompletelyLoaded",
+        "data.loading.started": "loading",
+        "data.loaded": {
+          target: "ready",
           actions: [
             assign({
               scrollActor: ({ spawn }) => spawn(scrollMachine),
@@ -363,148 +340,137 @@ export const audioPlayerMachine = setup({
         },
       },
     },
-    dataLoading: {
-      // on: {
-      //   data_loaded: {
-      //     target: "dataCompletelyLoaded",
-      //     actions: { type: "spawnActors" },
-      //   },
-      // },
+    loading: {
+      // Loading state for when data is being loaded
     },
-    dataCompletelyLoaded: {
+    ready: {
       entry: [
         { type: "showDataLoadedToast", params: { msg: "Data loaded" } },
         { type: "showStartPlayingToast", params: { msg: "Start playing" } },
         { type: "loadInitialIndices", params: { msg: "Load Initial Indices" } },
       ],
-      // exit: [
-      //   {
-      //     type: "startPlayingSundarKand",
-      //     params: { msg: "Playing Sundarkand" },
-      //   },
-      // ],
       after: {
-        100: "playingSundarkand", // Alternative 1: Automatic transition
+        100: "playing", // Automatic transition after data is loaded
       },
       on: {
-        play_audio: "playingSundarkand",
+        "audio.play": "playing",
       },
     },
-    playingSundarkand: {
+    playing: {
       type: "parallel",
       states: {
-        "audio playing states": {
-          initial: "pausedAudio",
+        playback: {
+          initial: "paused",
           states: {
-            playingAudio: {
+            playing: {
               on: {
-                pause: "pausedAudio",
-                forward: {
+                "audio.pause": "paused",
+                "audio.forward": {
                   actions: {
-                    type: "showForwardingToast",
+                    type: "showForwardToast",
                     params: { msg: "Forwarding" },
                   },
-                  target: "#audioPlayerToast.showingForwardToast",
+                  target: "#toastManager.showingForward",
                 },
-                backward: {
+                "audio.backward": {
                   actions: {
-                    type: "showBackwardingToast",
+                    type: "showBackwardToast",
                     params: { msg: "Backwarding" },
                   },
-                  target: "#audioPlayerToast.showingBackwardToast",
+                  target: "#toastManager.showingBackward",
                 },
-                seek: {
-                  target: "#audioPlayerSeek.seeking",
+                "audio.seek": {
+                  target: "#seekManager.seeking",
                 },
-                time_update: {
+                "audio.time.update": {
                   actions: ["updateTime", "updateTimeAndLyric"],
                 },
-                change_volume: {
+                "volume.change": {
                   actions: "updateVolume",
                 },
-                abcd: {
-                  actions: ["doAbcd", "scrollToAPositionEffect"],
+                "scroll.sync.needed": {
+                  actions: ["handleScrollSync", "scrollToPosition"],
                 },
               },
             },
-            pausedAudio: {
+            paused: {
               on: {
-                play_after_pause: "playingAudio",
-                forward: {
+                "audio.resume": "playing",
+                "audio.forward": {
                   actions: {
-                    type: "showForwardingToast",
+                    type: "showForwardToast",
                     params: { msg: "Forwarding" },
                   },
-                  target: "#audioPlayerToast.showingForwardToast",
+                  target: "#toastManager.showingForward",
                 },
-                backward: {
+                "audio.backward": {
                   actions: {
-                    type: "showBackwardingToast",
+                    type: "showBackwardToast",
                     params: { msg: "Backwarding" },
                   },
-                  target: "#audioPlayerToast.showingBackwardToast",
+                  target: "#toastManager.showingBackward",
                 },
-                seek: {
-                  target: "#audioPlayerSeek.seeking",
+                "audio.seek": {
+                  target: "#seekManager.seeking",
                 },
-                time_update: {
+                "audio.time.update": {
                   actions: ["updateTime", "updateTimeAndLyric"],
                 },
-                change_volume: {
+                "volume.change": {
                   actions: "updateVolume",
                 },
-                abcd: {
-                  actions: ["doAbcd", "scrollToAPositionEffect"],
+                "scroll.sync.needed": {
+                  actions: ["handleScrollSync", "scrollToPosition"],
                 },
               },
             },
           },
         },
-        "show play-pause toast": {
-          id: "audioPlayerToast",
+        toastManager: {
+          id: "toastManager",
           initial: "hidden",
           states: {
             hidden: {
               on: {
-                forward: "showingForwardToast",
-                backward: "showingBackwardToast",
+                "audio.forward": "showingForward",
+                "audio.backward": "showingBackward",
               },
             },
-            showingForwardToast: {
-              entry: "showForwardingToast",
+            showingForward: {
+              entry: "showForwardToast",
               after: {
                 500: "hidden",
               },
               on: {
-                forward: {
-                  actions: "showForwardingToast",
-                  target: "showingForwardToast",
+                "audio.forward": {
+                  actions: "showForwardToast",
+                  target: "showingForward",
                 },
               },
               exit: "hideToast",
             },
-            showingBackwardToast: {
-              entry: "showBackwardingToast",
+            showingBackward: {
+              entry: "showBackwardToast",
               after: {
                 500: "hidden",
               },
               on: {
-                backward: {
-                  actions: "showBackwardingToast",
-                  target: "showingBackwardToast",
+                "audio.backward": {
+                  actions: "showBackwardToast",
+                  target: "showingBackward",
                 },
               },
               exit: "hideToast",
             },
           },
         },
-        "show seek toast": {
-          id: "audioPlayerSeek",
+        seekManager: {
+          id: "seekManager",
           initial: "idle",
           states: {
             idle: {
               on: {
-                seek: "seeking",
+                "audio.seek": "seeking",
               },
             },
             seeking: {
@@ -519,15 +485,15 @@ export const audioPlayerMachine = setup({
                 },
               ],
               on: {
-                seek_complete: {
+                "audio.seek.complete": {
                   actions: [
                     { type: "updateCurrentPosition", params: {} },
                     { type: "hideSeekingToast", params: {} },
-                    { type: "scrollToAPositionEffect", params: {} },
+                    { type: "scrollToPosition", params: {} },
                   ],
                   target: "idle",
                 },
-                seek_failed: {
+                "audio.seek.failed": {
                   actions: { type: "hideSeekingToast", params: {} },
                   target: "idle",
                 },
@@ -535,23 +501,23 @@ export const audioPlayerMachine = setup({
             },
           },
         },
-        "lyric interaction": {
-          initial: "idle",
+        lyricInteraction: {
+          initial: "active",
           states: {
-            idle: {
+            active: {
               on: {
-                click_lyric: {
+                "lyric.clicked": {
                   actions: [
                     "updateSeekPosition",
                     "handleLyricClick",
                     "scrollToCurrentLyric",
                   ],
                 },
-                manual_scroll: {
+                "scroll.manual": {
                   actions: "triggerManualScroll",
                 },
-                lyric_update: {
-                  actions: ["updateLyricIndices", "scrollToAPositionEffect"],
+                "lyric.updated": {
+                  actions: ["updateLyricIndices", "scrollToPosition"],
                 },
               },
             },
